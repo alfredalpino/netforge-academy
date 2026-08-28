@@ -34,8 +34,7 @@ function blockSection(block: DailyBlock, items: string[]): StudySection {
 export function getFocusStudyContent(
   week: number,
   day: number,
-  moduleId: string,
-  activeBlockId?: string
+  moduleId: string
 ): FocusStudyContent {
   const plan = getDayPlan(week, day);
   const modInfo = getModule(moduleId);

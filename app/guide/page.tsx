@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useTour } from "@/components/TourProvider";
+import { PageShell } from "@/components/ui/PageShell";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 const SECTIONS = [
   {
@@ -15,23 +19,23 @@ const SECTIONS = [
     title: "Daily Workflow",
     items: [
       { q: "Morning routine", a: "Dashboard → check your position → Today for the plan → Focus Mode to study." },
-      { q: "Focus Mode", a: "Distraction-free. Timer + block checklist. Mark each block done as you finish." },
+      { q: "Focus Mode", a: "Distraction-free. Pomodoro timer + block checklist. Checklists persist across refreshes." },
       { q: "End of day", a: "Mark Day Complete on Today page. Check in on Accountability (streak + reflection)." },
     ],
   },
   {
     title: "Learning Journey",
     items: [
-      { q: "Where am I?", a: "The Journey bar on Dashboard shows your current topic (Linux, OSPF, etc.) and % through curriculum." },
-      { q: "Jump ahead?", a: "Tap any milestone on the Journey bar — e.g. skip from Linux straight to OSPF. Your week/day updates automatically." },
+      { q: "Where am I?", a: "The Journey bar on Dashboard shows your current topic and % through curriculum." },
+      { q: "Jump ahead?", a: "Tap any milestone on the Journey bar — you'll get a confirmation before your position updates." },
       { q: "Mark modules done", a: "Open Curriculum → pick a phase → Mark Complete on each module when exit criteria are met." },
     ],
   },
   {
-    title: "Progress",
+    title: "Progress & Backup",
     items: [
-      { q: "How is progress calculated?", a: "Weighted score: curriculum position (20%), modules (25%), days (20%), blocks (20%), lab setup (10%), drill accuracy (5%)." },
-      { q: "What counts?", a: "Completed days, study blocks, modules, lab checklist items, subnet drill scores, and where you are in the 28-week path." },
+      { q: "How is progress calculated?", a: "Weighted score: curriculum (20%), modules (25%), days (20%), blocks (20%), lab setup (10%), drills (5%)." },
+      { q: "Backup progress?", a: "Accountability → Settings & Backup → Export Progress. Import restores on the same or a new browser." },
       { q: "Streaks?", a: "Study daily. Completing blocks, days, or check-ins keeps your streak alive." },
     ],
   },
@@ -40,9 +44,8 @@ const SECTIONS = [
     items: [
       { q: "Dashboard", a: "Home. Position, journey, progress, quick actions." },
       { q: "Today", a: "Full daily plan — theory, config, lab, break/fix, recall." },
-      { q: "Resources", a: "Books, RFCs, labs, cert prep, tools — filterable library." },
-      { q: "Subnet Drills", a: "Daily practice. Target: under 30 seconds per question." },
-      { q: "Cert Gates", a: "CCNA → Security+ → NSE4 → AZ-104 → AZ-700 requirements." },
+      { q: "Subnet Drills", a: "Timed practice. Target: under 30 seconds per question." },
+      { q: "Cert Gates", a: "Live readiness tracking for CCNA → Security+ → NSE4 → AZ-104 → AZ-700." },
     ],
   },
   {
@@ -59,52 +62,40 @@ export default function GuidePage() {
   const { startTour } = useTour();
 
   return (
-    <div className="p-8 max-w-2xl">
-      <header className="mb-8">
-        <p className="text-xs uppercase tracking-widest text-accent">Quick Reference</p>
-        <h1 className="mt-1 text-2xl font-semibold">How to Use NetForge</h1>
-        <p className="mt-2 text-sm text-muted">
-          Everything you need in plain language. Short, but complete.
-        </p>
-      </header>
-
-      <div className="mb-8 flex flex-wrap gap-3">
-        <button
-          onClick={() => startTour("welcome")}
-          className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dim"
-        >
-          Take the Tour
-        </button>
-        <Link
-          href="/"
-          className="rounded-lg border border-border px-5 py-2.5 text-sm hover:bg-surface-hover"
-        >
-          Go to Dashboard
-        </Link>
-      </div>
+    <PageShell narrow>
+      <PageHeader
+        eyebrow="Quick Reference"
+        title="How to Use NetForge"
+        description="Everything you need in plain language. Short, but complete."
+        actions={
+          <>
+            <Button onClick={() => startTour("welcome")}>Take the Tour</Button>
+            <Link href="/">
+              <Button variant="secondary">Dashboard</Button>
+            </Link>
+          </>
+        }
+      />
 
       <div className="space-y-8">
         {SECTIONS.map((section) => (
           <section key={section.title}>
             <h2 className="mb-4 text-sm font-medium text-accent">{section.title}</h2>
-            <dl className="space-y-4">
+            <dl className="space-y-3">
               {section.items.map((item) => (
-                <div
-                  key={item.q}
-                  className="rounded-xl border border-border/60 bg-surface px-5 py-4"
-                >
+                <Card key={item.q} className="border-border/60 py-4">
                   <dt className="text-sm font-medium">{item.q}</dt>
                   <dd className="mt-1.5 text-sm leading-relaxed text-muted">{item.a}</dd>
-                </div>
+                </Card>
               ))}
             </dl>
           </section>
         ))}
       </div>
 
-      <p className="mt-10 text-xs text-muted">
-        Progress saves in your browser (localStorage). Same device, same browser.
+      <p className="mt-10 rounded-lg border border-border/50 bg-surface/50 px-4 py-3 text-xs text-muted">
+        Progress saves in your browser. Use Export on the Accountability page to back up your data.
       </p>
-    </div>
+    </PageShell>
   );
 }

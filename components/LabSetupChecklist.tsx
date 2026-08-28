@@ -1,6 +1,9 @@
 "use client";
 
 import { useProgress } from "@/lib/progress";
+import { Card } from "@/components/ui/Card";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { PageSkeleton } from "@/components/ui/Skeleton";
 
 const SETUP_STEPS = [
   {
@@ -58,53 +61,57 @@ const SETUP_STEPS = [
 export function LabSetupChecklist() {
   const { progress, toggleLabSetup, loaded } = useProgress();
 
-  if (!loaded) return null;
+  if (!loaded) return <PageSkeleton />;
 
   const totalItems = SETUP_STEPS.reduce((sum, s) => sum + s.items.length, 0);
   const completed = progress.labSetupComplete.length;
-  const pct = Math.round((completed / totalItems) * 100);
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-medium">Setup Checklist</h2>
-        <span className="text-xs text-muted">
-          {completed}/{totalItems} ({pct}%)
-        </span>
-      </div>
-      <div className="mb-4 h-2 overflow-hidden rounded-full bg-border">
-        <div
-          className="h-full rounded-full bg-success transition-all duration-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <div className="space-y-6">
-        {SETUP_STEPS.map((step) => (
-          <div
-            key={step.id}
-            className="rounded-xl border border-border bg-surface p-6"
-          >
-            <h3 className="font-medium">{step.title}</h3>
-            <ul className="mt-3 space-y-2">
-              {step.items.map((item) => {
-                const done = progress.labSetupComplete.includes(item.id);
-                return (
-                  <li key={item.id} className="flex items-start gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={done}
-                      onChange={() => toggleLabSetup(item.id)}
-                      className="mt-1 accent-success"
-                    />
-                    <span className={done ? "text-muted line-through" : "text-muted"}>
-                      {item.text}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+      <ProgressBar
+        value={completed}
+        max={totalItems}
+        label="Setup checklist"
+        className="mb-6"
+      />
+
+      <div className="space-y-4">
+        {SETUP_STEPS.map((step) => {
+          const stepDone = step.items.filter((i) =>
+            progress.labSetupComplete.includes(i.id)
+          ).length;
+
+          return (
+            <Card key={step.id}>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="font-medium">{step.title}</h3>
+                <span className="text-xs text-muted">
+                  {stepDone}/{step.items.length}
+                </span>
+              </div>
+              <ul className="space-y-2">
+                {step.items.map((item) => {
+                  const done = progress.labSetupComplete.includes(item.id);
+                  return (
+                    <li key={item.id}>
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/40 bg-background/50 px-3 py-2.5 transition hover:bg-background">
+                        <input
+                          type="checkbox"
+                          checked={done}
+                          onChange={() => toggleLabSetup(item.id)}
+                          className="mt-0.5 accent-success"
+                        />
+                        <span className={`text-sm ${done ? "text-muted line-through" : ""}`}>
+                          {item.text}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Card>
+          );
+        })}
       </div>
     </section>
   );

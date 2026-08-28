@@ -8,11 +8,14 @@ Not another video course. This is a structured execution system:
 
 - **28-week curriculum** — 8 phases, 24 modules (Phase 0 → Azure L3)
 - **Daily 7-hour schedule** — Theory → Config → Lab → Break/Fix → Recall
-- **Focus Mode** — timer + checklist only, no sidebar distractions
+- **Focus Mode** — Pomodoro timer + checklist, no sidebar distractions
 - **Week 1–4 day-by-day plans** — theory, commands, labs, break/fix, recall, gates
 - **Subnetting drills** — timed practice with instant feedback
-- **Progress tracking** — streaks, completed days/blocks (localStorage)
-- **Certification gates** — competency checks before exam prep
+- **Progress tracking** — streaks, blocks, modules, export/import (localStorage)
+- **Certification gates** — readiness tracked from modules, drills, and lab setup
+- **Accountability** — daily check-ins, weekly goals, activity heatmap
+- **Journey navigator** — jump between milestones with confirmation
+- **Onboarding tours** — guided walkthrough of the app
 
 ## Quick Start
 
@@ -24,20 +27,40 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+## Development
+
+```bash
+npm run lint       # ESLint
+npm run typecheck  # TypeScript
+npm run test       # Vitest unit tests
+npm run build      # Production build
+npm run validate   # All of the above
+```
+
 ## Deploy to Vercel
 
 ```bash
-# Install Vercel CLI (once)
 npm i -g vercel
-
-# From project root
 vercel
-
-# Production
 vercel --prod
 ```
 
 Or connect the GitHub repo to [vercel.com](https://vercel.com) for automatic deploys on push.
+
+## Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/` | Dashboard — position, journey, progress |
+| `/today` | Daily planner with block progress |
+| `/focus` | Distraction-free Pomodoro study mode |
+| `/accountability` | Streaks, check-ins, export/import |
+| `/curriculum` | Phase & module browser |
+| `/resources` | Filterable external resource library |
+| `/guide` | How-to-use FAQ and tours |
+| `/drills/subnetting` | Timed subnet practice |
+| `/gates` | Certification gate readiness |
+| `/labs` | Lab stack setup checklist |
 
 ## Daily Workflow
 
@@ -45,11 +68,24 @@ Or connect the GitHub repo to [vercel.com](https://vercel.com) for automatic dep
 2. **Today** — full daily plan with theory, config, lab, break/fix, recall
 3. **Focus Mode** — enter distraction-free session with block timer
 4. **Subnet Drills** — daily subnetting practice (especially Sundays)
-5. **Labs** — run Packet Tracer / EVE-NG / Wireshark locally per plan
+5. **Accountability** — check in, review heatmap, backup progress
+6. **Labs** — run Packet Tracer / EVE-NG / Wireshark locally per plan
+
+## Project Structure
+
+```
+network-engineering-academy/
+├── app/                    # Next.js App Router pages
+├── components/             # UI components + ui/ primitives
+├── hooks/                  # usePomodoro
+├── lib/                    # Curriculum data, progress, gates, subnetting
+├── .github/workflows/      # CI pipeline
+└── vitest.config.ts
+```
 
 ## Curriculum Source
 
-Structured from `Ubaid100xHunter/Time table.md` — one engineering curriculum, not exam silos:
+Structured from a single engineering curriculum — not exam silos:
 
 ```
 Packets → Protocols → Switching → Routing → Services → Security
@@ -58,37 +94,11 @@ Packets → Protocols → Switching → Routing → Services → Security
 
 **Priority path:** Phase 0 → 1 → 2 → 3 before touching FortiGate, BGP, or AZ-700.
 
-## Project Structure
+**Note:** Detailed day-by-day plans exist for weeks 1–4. Weeks 5–28 use module-based study content in Today and Focus Mode.
 
-```
-network-engineering-academy/
-├── app/
-│   ├── page.tsx              # Dashboard
-│   ├── focus/page.tsx        # Distraction-free study mode
-│   ├── today/page.tsx        # Daily planner
-│   ├── curriculum/           # Phase & module browser
-│   ├── drills/subnetting/    # Subnet practice tool
-│   ├── gates/page.tsx        # Certification gates
-│   └── labs/page.tsx         # Lab stack setup
-├── lib/
-│   ├── curriculum.ts         # Phases, modules, gates
-│   ├── daily-plans.ts        # Week 1–4 day-by-day
-│   ├── schedule.ts           # Daily blocks, weekly rhythm
-│   ├── progress.ts           # Progress hook (localStorage)
-│   └── subnetting.ts         # Drill logic
-└── components/
-```
+## Data & Privacy
 
-## NOC / Network Analyst Job Readiness
-
-This curriculum targets the skills NOC and junior network roles actually test:
-
-- Systematic troubleshooting (not command memorization)
-- Subnetting at speed
-- Wireshark packet analysis
-- VLAN/STP/routing fundamentals
-- Incident documentation mindset
-- Progression: NOC → Network Engineer via demonstrated lab ability
+All progress is stored in your browser's `localStorage`. Use **Export Progress** on the Accountability page to back up your data. No account or server sync is required.
 
 ---
 

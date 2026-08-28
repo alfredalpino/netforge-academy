@@ -80,6 +80,8 @@ export interface DrillStats {
   bestStreak: number;
   totalCorrect: number;
   totalAttempts: number;
+  totalTimeSeconds?: number;
+  averageSeconds?: number;
 }
 
 export type ResourceType =
@@ -120,6 +122,7 @@ export interface ProgressState {
   notes: Record<string, string>;
   currentModuleId: string;
   completedTours: string[];
+  focusChecklists: Record<string, boolean>;
 }
 
 export const DEFAULT_PROGRESS: ProgressState = {
@@ -140,4 +143,5 @@ export const DEFAULT_PROGRESS: ProgressState = {
   notes: {},
   currentModuleId: "m0-foundation",
   completedTours: [],
+  focusChecklists: {},
 };

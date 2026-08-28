@@ -7,6 +7,7 @@ interface StudyMaterialProps {
   activeBlockId: string;
   onBlockChange: (blockId: string) => void;
   checklist: Record<string, boolean>;
+  checklistKey: (blockId: string, idx: number) => string;
   onToggleCheck: (blockId: string, idx: number) => void;
   isBlockComplete: (blockId: string) => boolean;
   onMarkBlockComplete: (blockId: string) => void;
@@ -17,6 +18,7 @@ export function StudyMaterial({
   activeBlockId,
   onBlockChange,
   checklist,
+  checklistKey,
   onToggleCheck,
   isBlockComplete,
   onMarkBlockComplete,
@@ -38,10 +40,12 @@ export function StudyMaterial({
       </header>
 
       {/* Block tabs */}
-      <div data-tour="focus-blocks" className="flex flex-wrap gap-2">
+      <div data-tour="focus-blocks" className="flex flex-wrap gap-2" role="tablist" aria-label="Study blocks">
         {content.sections.map((section) => (
           <button
             key={section.blockId}
+            role="tab"
+            aria-selected={activeBlockId === section.blockId}
             onClick={() => onBlockChange(section.blockId)}
             className={`rounded-lg px-3 py-1.5 text-xs transition ${
               activeBlockId === section.blockId
@@ -62,6 +66,7 @@ export function StudyMaterial({
         <ActiveSection
           section={active}
           checklist={checklist}
+          checklistKey={checklistKey}
           onToggleCheck={onToggleCheck}
           isComplete={isBlockComplete(active.blockId)}
           onMarkComplete={() => onMarkBlockComplete(active.blockId)}
@@ -94,18 +99,20 @@ export function StudyMaterial({
 function ActiveSection({
   section,
   checklist,
+  checklistKey,
   onToggleCheck,
   isComplete,
   onMarkComplete,
 }: {
   section: StudySection;
   checklist: Record<string, boolean>;
+  checklistKey: (blockId: string, idx: number) => string;
   onToggleCheck: (blockId: string, idx: number) => void;
   isComplete: boolean;
   onMarkComplete: () => void;
 }) {
   const allChecked = section.items.every(
-    (_, i) => checklist[`${section.blockId}-${i}`]
+    (_, i) => checklist[checklistKey(section.blockId, i)]
   );
 
   return (
@@ -134,7 +141,7 @@ function ActiveSection({
             <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/40 bg-background/50 px-4 py-3 transition hover:bg-background">
               <input
                 type="checkbox"
-                checked={!!checklist[`${section.blockId}-${i}`]}
+                checked={!!checklist[checklistKey(section.blockId, i)]}
                 onChange={() => onToggleCheck(section.blockId, i)}
                 className="mt-1 accent-accent"
               />

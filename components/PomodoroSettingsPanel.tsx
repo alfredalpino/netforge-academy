@@ -4,6 +4,9 @@ import {
   POMODORO_PRESETS,
   type PomodoroSettings,
 } from "@/lib/pomodoro";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Card } from "@/components/ui/Card";
 
 interface PomodoroSettingsPanelProps {
   presetId: string;
@@ -50,64 +53,59 @@ export function PomodoroSettingsPanel({
       </div>
 
       {isCustom && (
-        <div className="rounded-xl border border-border bg-surface p-4">
+        <Card>
           <p className="mb-3 text-xs uppercase tracking-widest text-muted">Custom intervals</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm">
-              <span className="text-xs text-muted">Work (min)</span>
-              <input
-                type="number"
-                min={1}
-                max={120}
-                value={settings.workMinutes}
-                disabled={disabled}
-                onChange={(e) => update({ workMinutes: Number(e.target.value) })}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="text-xs text-muted">Short break (min)</span>
-              <input
-                type="number"
-                min={1}
-                max={30}
-                value={settings.shortBreakMinutes}
-                disabled={disabled}
-                onChange={(e) => update({ shortBreakMinutes: Number(e.target.value) })}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="text-xs text-muted">Long break (min)</span>
-              <input
-                type="number"
-                min={5}
-                max={60}
-                value={settings.longBreakMinutes}
-                disabled={disabled}
-                onChange={(e) => update({ longBreakMinutes: Number(e.target.value) })}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="text-xs text-muted">Sessions before long break</span>
-              <select
-                value={settings.sessionsBeforeLongBreak}
-                disabled={disabled}
-                onChange={(e) =>
-                  update({ sessionsBeforeLongBreak: Number(e.target.value) })
-                }
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              >
-                {[2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>
-                    {n} sessions
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Input
+              id="work-minutes"
+              label="Work (min)"
+              type="number"
+              min={1}
+              max={120}
+              value={settings.workMinutes}
+              disabled={disabled}
+              onChange={(e) => update({ workMinutes: Number(e.target.value) })}
+              className="font-mono"
+            />
+            <Input
+              id="short-break"
+              label="Short break (min)"
+              type="number"
+              min={1}
+              max={30}
+              value={settings.shortBreakMinutes}
+              disabled={disabled}
+              onChange={(e) => update({ shortBreakMinutes: Number(e.target.value) })}
+              className="font-mono"
+            />
+            <Input
+              id="long-break"
+              label="Long break (min)"
+              type="number"
+              min={5}
+              max={60}
+              value={settings.longBreakMinutes}
+              disabled={disabled}
+              onChange={(e) => update({ longBreakMinutes: Number(e.target.value) })}
+              className="font-mono"
+            />
+            <Select
+              id="sessions-before-long"
+              label="Sessions before long break"
+              value={settings.sessionsBeforeLongBreak}
+              disabled={disabled}
+              onChange={(e) =>
+                update({ sessionsBeforeLongBreak: Number(e.target.value) })
+              }
+            >
+              {[2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  {n} sessions
+                </option>
+              ))}
+            </Select>
           </div>
-        </div>
+        </Card>
       )}
 
       <p className="text-xs text-muted">

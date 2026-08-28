@@ -10,6 +10,7 @@
   --accent-dim: #2563eb;
   --success: #22c55e;
   --warning: #f59e0b;
+  --error: #ef4444;
   --muted: #8b95a8;
   --focus-bg: #080a0e;
 }
@@ -24,6 +25,7 @@
   --color-accent-dim: var(--accent-dim);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-error: var(--error);
   --color-muted: var(--muted);
   --color-focus-bg: var(--focus-bg);
   --font-sans: var(--font-geist-sans);
@@ -34,6 +36,25 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.page-shell {
+  animation: page-enter 0.35s ease-out;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+a:not([class*="rounded"]) {
+  transition: color 0.15s ease;
 }
 
 ::selection {
@@ -458,4 +479,40 @@ body {
 
 .focus-break-mode {
   background: color-mix(in srgb, var(--success) 3%, var(--focus-bg));
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@media (max-width: 768px), (hover: none) {
+  .pomodoro-bubble-controls {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-pulse-ring,
+  .animate-pulse,
+  .page-shell {
+    animation: none !important;
+  }
 }

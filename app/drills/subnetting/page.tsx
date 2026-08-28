@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   generateSubnetQuestion,
@@ -9,24 +9,60 @@ import {
   type SubnetAnswer,
 } from "@/lib/subnetting";
 import { useProgress } from "@/lib/progress";
+import { useToast } from "@/components/ui/Toast";
+import { PageShell } from "@/components/ui/PageShell";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { PageSkeleton } from "@/components/ui/Skeleton";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+
+const DRILL_TIME_SECONDS = 30;
 
 export default function SubnettingDrillPage() {
   const { progress, loaded, recordDrillResult } = useProgress();
+  const { showToast } = useToast();
   const [question, setQuestion] = useState(generateSubnetQuestion);
   const [answers, setAnswers] = useState<Partial<SubnetAnswer>>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [streak, setStreak] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(DRILL_TIME_SECONDS);
+  const [elapsed, setElapsed] = useState(0);
+  const startedAt = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (submitted) return;
+    if (startedAt.current === null) startedAt.current = Date.now();
+
+    const timer = window.setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+      if (startedAt.current) {
+        setElapsed(Math.round((Date.now() - startedAt.current) / 1000));
+      }
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [question, submitted]);
 
   const nextQuestion = useCallback(() => {
     setQuestion(generateSubnetQuestion());
     setAnswers({});
     setSubmitted(false);
+    setSecondsLeft(DRILL_TIME_SECONDS);
+    setElapsed(0);
+    startedAt.current = Date.now();
   }, []);
 
   const handleSubmit = () => {
     setSubmitted(true);
-    const results = checkAnswer(answers, question.answer);
     const allCorrect = isFullyCorrect(answers, question.answer);
     const newStreak = allCorrect ? streak + 1 : 0;
     setScore((s) => ({
@@ -34,54 +70,53 @@ export default function SubnettingDrillPage() {
       total: s.total + 1,
     }));
     setStreak(newStreak);
-    recordDrillResult(allCorrect, newStreak);
-    return results;
+    recordDrillResult(allCorrect, newStreak, elapsed);
+    showToast(allCorrect ? "Correct!" : "Review the answers below", allCorrect ? "success" : "warning");
   };
 
   const results = submitted ? checkAnswer(answers, question.answer) : [];
 
-  return (
-    <div className="p-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold">Subnetting Drills</h1>
-        <p className="mt-1 text-muted">
-          Target: answer in under 30 seconds without a calculator
-        </p>
-      </header>
+  const fieldResults: Record<string, boolean | undefined> = {
+    network: results.find((r) => r.field === "Network")?.correct,
+    broadcast: results.find((r) => r.field === "Broadcast")?.correct,
+    firstHost: results.find((r) => r.field === "First Host")?.correct,
+    lastHost: results.find((r) => r.field === "Last Host")?.correct,
+    usableHosts: results.find((r) => r.field === "Usable Hosts")?.correct,
+  };
 
-      <div className="mb-6 flex flex-wrap gap-6 text-sm">
-        <div>
-          <span className="text-muted">Session: </span>
-          <span className="font-mono font-medium">
-            {score.correct}/{score.total}
-          </span>
-        </div>
-        <div>
-          <span className="text-muted">Streak: </span>
-          <span className="font-mono font-medium text-success">{streak}</span>
-        </div>
-        {loaded && (
-          <>
-            <div>
-              <span className="text-muted">All-time: </span>
-              <span className="font-mono font-medium">
-                {progress.drillStats.totalCorrect}/{progress.drillStats.totalAttempts}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted">Best streak: </span>
-              <span className="font-mono font-medium text-accent">
-                {progress.drillStats.bestStreak}
-              </span>
-            </div>
-          </>
+  if (!loaded) return <PageSkeleton />;
+
+  return (
+    <PageShell narrow>
+      <PageHeader
+        eyebrow="Drills"
+        title="Subnetting Drills"
+        description={`Target: answer in under ${DRILL_TIME_SECONDS} seconds without a calculator.`}
+        actions={
+          <Link href="/accountability">
+            <Button variant="secondary">View progress</Button>
+          </Link>
+        }
+      />
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <Badge tone={secondsLeft <= 10 && !submitted ? "warning" : "default"}>
+          Timer: {submitted ? `${elapsed}s` : `${secondsLeft}s`}
+        </Badge>
+        <Badge>
+          Session: {score.correct}/{score.total}
+        </Badge>
+        <Badge tone="success">Streak: {streak}</Badge>
+        <Badge>
+          All-time: {progress.drillStats.totalCorrect}/{progress.drillStats.totalAttempts}
+        </Badge>
+        <Badge tone="accent">Best: {progress.drillStats.bestStreak}</Badge>
+        {progress.drillStats.averageSeconds !== undefined && (
+          <Badge>Avg: {progress.drillStats.averageSeconds.toFixed(1)}s</Badge>
         )}
-        <Link href="/accountability" className="text-accent hover:underline">
-          View progress →
-        </Link>
       </div>
 
-      <section className="mx-auto max-w-lg rounded-xl border border-border bg-surface p-8">
+      <Card className="mx-auto max-w-lg">
         <p className="text-center text-xs uppercase tracking-widest text-muted">
           Given this host
         </p>
@@ -99,54 +134,42 @@ export default function SubnettingDrillPage() {
         >
           {(
             [
-              ["network", "Network Address"],
-              ["broadcast", "Broadcast Address"],
-              ["firstHost", "First Usable Host"],
-              ["lastHost", "Last Usable Host"],
-              ["usableHosts", "Usable Hosts", "number"],
+              ["network", "Network Address", "network-address"],
+              ["broadcast", "Broadcast Address", "broadcast-address"],
+              ["firstHost", "First Usable Host", "first-host"],
+              ["lastHost", "Last Usable Host", "last-host"],
+              ["usableHosts", "Usable Hosts", "usable-hosts", "number"],
             ] as const
-          ).map(([field, label, type]) => (
-            <div key={field}>
-              <label className="text-xs text-muted">{label}</label>
-              <input
-                type={type ?? "text"}
-                value={answers[field as keyof SubnetAnswer]?.toString() ?? ""}
-                onChange={(e) =>
-                  setAnswers((a) => ({
-                    ...a,
-                    [field]:
-                      type === "number"
-                        ? parseInt(e.target.value) || undefined
-                        : e.target.value,
-                  }))
-                }
-                disabled={submitted}
-                className={`mt-1 w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm outline-none focus:border-accent ${
-                  submitted
-                    ? results.find((r) => r.field === label.split(" ")[0] || r.field.startsWith(label.split(" ")[0]))
-                      ? results.find((r) =>
-                          label.startsWith(r.field) ||
-                          (r.field === "First Host" && field === "firstHost") ||
-                          (r.field === "Last Host" && field === "lastHost") ||
-                          (r.field === "Usable Hosts" && field === "usableHosts") ||
-                          (r.field === "Network" && field === "network") ||
-                          (r.field === "Broadcast" && field === "broadcast")
-                        )?.correct
-                        ? "border-success"
-                        : "border-red-500"
-                      : "border-border"
-                    : "border-border"
-                }`}
-              />
-            </div>
+          ).map(([field, label, inputId, type]) => (
+            <Input
+              key={field}
+              id={inputId}
+              label={label}
+              type={type ?? "text"}
+              value={answers[field as keyof SubnetAnswer]?.toString() ?? ""}
+              onChange={(e) =>
+                setAnswers((a) => ({
+                  ...a,
+                  [field]:
+                    type === "number"
+                      ? parseInt(e.target.value) || undefined
+                      : e.target.value,
+                }))
+              }
+              disabled={submitted}
+              className={
+                submitted
+                  ? fieldResults[field]
+                    ? "border-success"
+                    : "border-error"
+                  : ""
+              }
+            />
           ))}
 
-          <button
-            type="submit"
-            className="mt-4 w-full rounded-lg bg-accent py-2.5 text-sm font-medium text-white hover:bg-accent-dim"
-          >
+          <Button type="submit" className="mt-4 w-full">
             {submitted ? "Next Question →" : "Check Answer"}
-          </button>
+          </Button>
         </form>
 
         {submitted && (
@@ -176,7 +199,7 @@ export default function SubnettingDrillPage() {
             </dl>
           </div>
         )}
-      </section>
-    </div>
+      </Card>
+    </PageShell>
   );
 }

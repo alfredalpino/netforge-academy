@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { ProgressRing } from "@/components/ProgressRing";
 import { StreakCalendar } from "@/components/StreakCalendar";
+import { Card } from "@/components/ui/Card";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 import {
   getDayProgressPercent,
   getWeekProgress,
@@ -46,7 +48,7 @@ export function ProgressTracker({ progress, compact = false }: ProgressTrackerPr
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="rounded-xl border border-border bg-surface p-6 lg:col-span-2">
+        <Card className="lg:col-span-2">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="space-y-4">
               <div>
@@ -78,20 +80,10 @@ export function ProgressTracker({ progress, compact = false }: ProgressTrackerPr
           </div>
 
           <div className="mt-6">
-            <div className="mb-2 flex items-center justify-between text-xs">
-              <span className="text-muted">Week {progress.currentWeek} progress</span>
-              <span className="text-muted">
-                {weekStats.daysComplete}/7 days · {weekStats.blocksComplete}/{weekStats.totalBlocks} blocks
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-border">
-              <div
-                className="h-full rounded-full bg-accent transition-all duration-500"
-                style={{
-                  width: `${Math.round((weekStats.blocksComplete / weekStats.totalBlocks) * 100)}%`,
-                }}
-              />
-            </div>
+            <ProgressBar
+              value={Math.round((weekStats.blocksComplete / weekStats.totalBlocks) * 100)}
+              label={`Week ${progress.currentWeek} · ${weekStats.daysComplete}/7 days · ${weekStats.blocksComplete}/${weekStats.totalBlocks} blocks`}
+            />
           </div>
 
           <div className="mt-4">
@@ -115,9 +107,9 @@ export function ProgressTracker({ progress, compact = false }: ProgressTrackerPr
               })}
             </div>
           </div>
-        </section>
+        </Card>
 
-        <section className="rounded-xl border border-border bg-surface p-6">
+        <Card>
           <h3 className="text-sm font-medium">Study Activity</h3>
           <p className="mt-1 text-xs text-muted">Last 12 weeks</p>
           <div className="mt-4">
@@ -151,7 +143,7 @@ export function ProgressTracker({ progress, compact = false }: ProgressTrackerPr
           >
             Full accountability tracker →
           </Link>
-        </section>
+        </Card>
       </div>
     </div>
   );

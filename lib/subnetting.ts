@@ -13,8 +13,16 @@ export interface SubnetAnswer {
   usableHosts: number;
 }
 
-function ipToInt(ip: string): number {
-  return ip.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+function ipToInt(ip: string): number | null {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return null;
+  let result = 0;
+  for (const octet of parts) {
+    const n = parseInt(octet, 10);
+    if (Number.isNaN(n) || n < 0 || n > 255) return null;
+    result = (result << 8) + n;
+  }
+  return result >>> 0;
 }
 
 function intToIp(n: number): string {
@@ -22,8 +30,14 @@ function intToIp(n: number): string {
 }
 
 export function calculateSubnet(ip: string, prefix: number): SubnetAnswer {
-  const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
+  if (prefix < 0 || prefix > 32) {
+    throw new RangeError("Prefix must be between 0 and 32");
+  }
   const ipInt = ipToInt(ip);
+  if (ipInt === null) {
+    throw new RangeError("Invalid IP address");
+  }
+  const mask = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
   const networkInt = (ipInt & mask) >>> 0;
   const broadcastInt = (networkInt | (~mask >>> 0)) >>> 0;
   const totalHosts = 2 ** (32 - prefix);

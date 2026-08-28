@@ -11,11 +11,15 @@ import {
   savePomodoroSettings,
 } from "@/lib/pomodoro";
 
+function getInitialPomodoroState() {
+  const loaded = loadPomodoroSettings();
+  return { presetId: loaded.presetId, settings: loaded.settings };
+}
+
 export function usePomodoro() {
-  const [presetId, setPresetId] = useState("classic");
-  const [settings, setSettings] = useState<PomodoroSettings>(
-    loadPomodoroSettings().settings
-  );
+  const initial = getInitialPomodoroState();
+  const [presetId, setPresetId] = useState(initial.presetId);
+  const [settings, setSettings] = useState<PomodoroSettings>(initial.settings);
   const [phase, setPhase] = useState<PomodoroPhase>("idle");
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [totalSeconds, setTotalSeconds] = useState(0);
@@ -24,15 +28,15 @@ export function usePomodoro() {
   const [sessionActive, setSessionActive] = useState(false);
 
   const settingsRef = useRef(settings);
-  const completedRef = useRef(0);
-  settingsRef.current = settings;
-  completedRef.current = completedSessions;
+  const completedRef = useRef(completedSessions);
 
   useEffect(() => {
-    const loaded = loadPomodoroSettings();
-    setPresetId(loaded.presetId);
-    setSettings(loaded.settings);
-  }, []);
+    settingsRef.current = settings;
+  }, [settings]);
+
+  useEffect(() => {
+    completedRef.current = completedSessions;
+  }, [completedSessions]);
 
   const advancePhase = useCallback(() => {
     setPhase((current) => {

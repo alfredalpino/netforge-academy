@@ -3,18 +3,30 @@
 import Link from "next/link";
 import { useProgress, getOverallProgress } from "@/lib/progress";
 import { JOURNEY_MILESTONES, getMilestoneIndex } from "@/lib/journey";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 interface JourneyNavigatorProps {
   compact?: boolean;
 }
 
 export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
-  const { progress, loaded, jumpToMilestone, isModuleComplete } = useProgress();
+  const { progress, loaded, jumpToMilestone } = useProgress();
+  const { confirm } = useConfirm();
 
   if (!loaded) return null;
 
   const overall = getOverallProgress(progress);
   const currentIdx = getMilestoneIndex(progress.currentModuleId);
+
+  const handleJump = async (moduleId: string, label: string) => {
+    if (moduleId === progress.currentModuleId) return;
+    const ok = await confirm({
+      title: `Jump to ${label}?`,
+      message: "Your current week and day position will update to match this milestone.",
+      confirmLabel: "Jump",
+    });
+    if (ok) jumpToMilestone(moduleId);
+  };
 
   if (compact) {
     return (
@@ -29,8 +41,8 @@ export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
           </div>
           {overall.nextMilestone && (
             <button
-              onClick={() => jumpToMilestone(overall.nextMilestone!.moduleId)}
-              className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-accent hover:bg-accent/20"
+              onClick={() => handleJump(overall.nextMilestone!.moduleId, overall.nextMilestone!.shortLabel)}
+              className="rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-accent hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Continue → {overall.nextMilestone.shortLabel}
             </button>
@@ -38,8 +50,9 @@ export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
         </div>
         <JourneyTrack
           currentIdx={currentIdx}
+          currentModuleId={progress.currentModuleId}
           completedModules={progress.completedModules}
-          onJump={jumpToMilestone}
+          onJump={handleJump}
         />
       </section>
     );
@@ -65,8 +78,8 @@ export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
         <Stat label="Modules done" value={`${overall.completedModules}/${overall.totalModules}`} />
         {overall.nextMilestone && (
           <button
-            onClick={() => jumpToMilestone(overall.nextMilestone!.moduleId)}
-            className="ml-auto rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-white hover:bg-accent-dim"
+            onClick={() => handleJump(overall.nextMilestone!.moduleId, overall.nextMilestone!.shortLabel)}
+            className="ml-auto rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-white hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Continue to {overall.nextMilestone.shortLabel} →
           </button>
@@ -75,8 +88,9 @@ export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
 
       <JourneyTrack
         currentIdx={currentIdx}
+        currentModuleId={progress.currentModuleId}
         completedModules={progress.completedModules}
-        onJump={jumpToMilestone}
+        onJump={handleJump}
       />
     </section>
   );
@@ -84,26 +98,29 @@ export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
 
 function JourneyTrack({
   currentIdx,
+  currentModuleId,
   completedModules,
   onJump,
 }: {
   currentIdx: number;
+  currentModuleId: string;
   completedModules: string[];
-  onJump: (moduleId: string) => void;
+  onJump: (moduleId: string, label: string) => void;
 }) {
   return (
     <div className="journey-track-wrapper">
       <div className="journey-track">
         {JOURNEY_MILESTONES.map((m, i) => {
-          const isCurrent = i === currentIdx;
+          const isCurrent = m.moduleId === currentModuleId;
           const isComplete = completedModules.includes(m.moduleId);
           const isPast = i < currentIdx;
 
           return (
             <button
               key={m.id}
-              onClick={() => onJump(m.moduleId)}
-              title={`${m.title} — Week ${m.week}`}
+              onClick={() => onJump(m.moduleId, m.shortLabel)}
+              aria-label={`${m.title}, week ${m.week}${isCurrent ? ", current" : ""}`}
+              aria-current={isCurrent ? "step" : undefined}
               className={`journey-node group ${isCurrent ? "journey-node-current" : ""} ${
                 isComplete ? "journey-node-complete" : ""
               } ${isPast && !isComplete ? "journey-node-past" : ""}`}

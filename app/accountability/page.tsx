@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ProgressTracker } from "@/components/ProgressTracker";
 import { JourneyNavigator } from "@/components/JourneyNavigator";
@@ -12,6 +12,15 @@ import {
   daysSinceStart,
 } from "@/lib/progress";
 import { getWeekPhase } from "@/lib/schedule";
+import { PageShell } from "@/components/ui/PageShell";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { useToast } from "@/components/ui/Toast";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { PageSkeleton } from "@/components/ui/Skeleton";
 
 export default function AccountabilityPage() {
   const {
@@ -21,7 +30,12 @@ export default function AccountabilityPage() {
     recordCheckIn,
     setStartDate,
     resetProgress,
+    exportProgress,
+    importProgress,
   } = useProgress();
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const today = new Date().toISOString().split("T")[0];
   const todayCheckIn = getTodayCheckIn(progress.checkIns);
@@ -37,11 +51,8 @@ export default function AccountabilityPage() {
   const [hours, setHours] = useState(todayCheckIn?.hours?.toString() ?? "");
   const [reflection, setReflection] = useState(todayCheckIn?.reflection ?? "");
   const [weeklyGoal, setWeeklyGoalLocal] = useState(progress.weeklyGoal);
-  const [showReset, setShowReset] = useState(false);
 
-  if (!loaded) {
-    return <div className="p-8 text-muted">Loading...</div>;
-  }
+  if (!loaded) return <PageSkeleton />;
 
   const handleCheckIn = () => {
     recordCheckIn({
@@ -49,6 +60,47 @@ export default function AccountabilityPage() {
       hours: hours ? parseFloat(hours) : undefined,
       reflection: reflection || undefined,
     });
+    showToast(todayCheckIn ? "Check-in updated" : "Check-in saved");
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([exportProgress()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `netforge-progress-${today}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    showToast("Progress exported");
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const ok = await confirm({
+        title: "Import progress?",
+        message: "This will replace your current progress with the imported file.",
+        confirmLabel: "Import",
+        tone: "danger",
+      });
+      if (!ok) return;
+
+      const result = importProgress(data);
+      if (result.success) {
+        showToast("Progress imported successfully");
+        window.location.reload();
+      } else {
+        showToast(result.error ?? "Import failed", "error");
+      }
+    } catch {
+      showToast("Invalid progress file", "error");
+    } finally {
+      event.target.value = "";
+    }
   };
 
   const recentCheckIns = Object.entries(progress.checkIns)
@@ -56,17 +108,19 @@ export default function AccountabilityPage() {
     .slice(0, 7);
 
   return (
-    <div className="p-8">
-      <header className="mb-8">
-        <p className="text-xs uppercase tracking-widest text-accent">Accountability</p>
-        <h1 className="mt-1 text-2xl font-semibold">Streak & Progress Tracker</h1>
-        <p className="mt-1 text-sm text-muted">
-          Stay consistent — track streaks, check in daily, and review your commitment
-        </p>
-      </header>
+    <PageShell>
+      <PageHeader
+        eyebrow="Accountability"
+        title="Streak & Progress Tracker"
+        description="Stay consistent — track streaks, check in daily, and review your commitment."
+        actions={
+          progress.streak > 0 ? (
+            <Badge tone="success">{progress.streak} day streak</Badge>
+          ) : undefined
+        }
+      />
 
-      {/* Streak hero */}
-      <section className="mb-8 rounded-xl border border-success/30 bg-success/5 p-6">
+      <Card className="mb-8 border-success/30 bg-success/5">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div>
             <p className="text-xs uppercase tracking-widest text-success">Current Streak</p>
@@ -88,7 +142,7 @@ export default function AccountabilityPage() {
             </p>
           </div>
         </div>
-      </section>
+      </Card>
 
       <ProgressTracker progress={progress} />
 
@@ -97,14 +151,14 @@ export default function AccountabilityPage() {
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        {/* Daily check-in */}
-        <section className="rounded-xl border border-border bg-surface p-6">
+        <Card>
           <h2 className="text-sm font-medium">Daily Check-In</h2>
           <p className="mt-1 text-xs text-muted">{today}</p>
 
           <div className="mt-4 space-y-4">
-            <label className="flex items-center gap-3">
+            <label htmlFor="studied-today" className="flex items-center gap-3">
               <input
+                id="studied-today"
                 type="checkbox"
                 checked={studied}
                 onChange={(e) => setStudied(e.target.checked)}
@@ -113,61 +167,66 @@ export default function AccountabilityPage() {
               <span className="text-sm">I studied today</span>
             </label>
 
-            <div>
-              <label className="text-xs text-muted">Hours studied</label>
-              <input
-                type="number"
-                min="0"
-                max="24"
-                step="0.5"
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
-                placeholder="e.g. 6"
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
-            </div>
+            <Input
+              id="hours-studied"
+              label="Hours studied"
+              type="number"
+              min="0"
+              max="24"
+              step="0.5"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              placeholder="e.g. 6"
+            />
 
             <div>
-              <label className="text-xs text-muted">Reflection (what did you learn?)</label>
+              <label htmlFor="reflection" className="text-xs text-muted">
+                Reflection (what did you learn?)
+              </label>
               <textarea
+                id="reflection"
                 value={reflection}
                 onChange={(e) => setReflection(e.target.value)}
                 rows={3}
                 placeholder="Explain OSPF neighbor states from memory..."
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
             </div>
 
-            <button
-              onClick={handleCheckIn}
-              className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dim"
-            >
+            <Button onClick={handleCheckIn}>
               {todayCheckIn ? "Update Check-In" : "Submit Check-In"}
-            </button>
+            </Button>
           </div>
-        </section>
+        </Card>
 
-        {/* Weekly goal */}
-        <section className="rounded-xl border border-border bg-surface p-6">
+        <Card>
           <h2 className="text-sm font-medium">Weekly Commitment</h2>
           <p className="mt-1 text-xs text-muted">
             Week {progress.currentWeek}: {weekStats.daysComplete}/7 days ·{" "}
             {weekStats.blocksComplete}/{weekStats.totalBlocks} blocks
           </p>
 
+          <label htmlFor="weekly-goal" className="sr-only">
+            Weekly goal
+          </label>
           <textarea
+            id="weekly-goal"
             value={weeklyGoal}
             onChange={(e) => setWeeklyGoalLocal(e.target.value)}
             rows={3}
             placeholder="Complete Phase 1 subnetting module and pass 20 subnet drills in a row..."
-            className="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
+            className="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           />
-          <button
-            onClick={() => setWeeklyGoal(weeklyGoal)}
-            className="mt-3 rounded-lg border border-border px-4 py-2 text-sm hover:bg-surface-hover"
+          <Button
+            variant="secondary"
+            className="mt-3"
+            onClick={() => {
+              setWeeklyGoal(weeklyGoal);
+              showToast("Weekly goal saved");
+            }}
           >
             Save Weekly Goal
-          </button>
+          </Button>
 
           {progress.weeklyGoal && (
             <div className="mt-4 rounded-lg bg-accent/10 p-4">
@@ -182,12 +241,11 @@ export default function AccountabilityPage() {
               <StreakCalendar studyHistory={progress.studyHistory} weeks={8} />
             </div>
           </div>
-        </section>
+        </Card>
       </div>
 
-      {/* Recent check-ins */}
       {recentCheckIns.length > 0 && (
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <Card className="mt-8">
           <h2 className="text-sm font-medium">Recent Check-Ins</h2>
           <div className="mt-4 space-y-3">
             {recentCheckIns.map(([date, checkIn]) => (
@@ -214,58 +272,65 @@ export default function AccountabilityPage() {
               </div>
             ))}
           </div>
-        </section>
+        </Card>
       )}
 
-      {/* Settings */}
-      <section className="mt-8 rounded-xl border border-border bg-surface p-6">
-        <h2 className="text-sm font-medium">Settings</h2>
+      <Card className="mt-8">
+        <h2 className="text-sm font-medium">Settings & Backup</h2>
         <div className="mt-4 flex flex-wrap items-end gap-4">
-          <div>
-            <label className="text-xs text-muted">Program start date</label>
-            <input
-              type="date"
-              value={progress.startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="mt-1 block rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            />
-          </div>
+          <Input
+            id="start-date"
+            label="Program start date"
+            type="date"
+            value={progress.startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              showToast("Start date updated");
+            }}
+          />
           <div>
             <p className="text-xs text-muted">Days since start</p>
             <p className="mt-1 text-lg font-semibold">{daysSinceStart(progress.startDate)}</p>
           </div>
         </div>
 
-        <div className="mt-6 border-t border-border pt-4">
-          {!showReset ? (
-            <button
-              onClick={() => setShowReset(true)}
-              className="text-xs text-warning hover:underline"
-            >
-              Reset all progress
-            </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-warning">This cannot be undone.</p>
-              <button
-                onClick={() => {
-                  resetProgress();
-                  setShowReset(false);
-                }}
-                className="rounded-lg bg-warning/20 px-4 py-2 text-sm text-warning hover:bg-warning/30"
-              >
-                Confirm Reset
-              </button>
-              <button
-                onClick={() => setShowReset(false)}
-                className="text-sm text-muted hover:underline"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+        <div className="mt-6 flex flex-wrap gap-3 border-t border-border pt-4">
+          <Button variant="secondary" onClick={handleExport}>
+            Export Progress
+          </Button>
+          <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+            Import Progress
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleImport}
+          />
         </div>
-      </section>
-    </div>
+
+        <div className="mt-6 border-t border-border pt-4">
+          <Button
+            variant="danger"
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Reset all progress?",
+                message: "This cannot be undone. Export a backup first if you need one.",
+                confirmLabel: "Reset everything",
+                tone: "danger",
+              });
+              if (ok) {
+                resetProgress();
+                showToast("Progress reset", "warning");
+                window.location.reload();
+              }
+            }}
+          >
+            Reset all progress
+          </Button>
+        </div>
+      </Card>
+    </PageShell>
   );
 }

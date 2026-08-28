@@ -12,7 +12,6 @@ import {
 
 interface PomodoroBubbleProps {
   secondsLeft: number;
-  totalSeconds: number;
   progress: number;
   phase: PomodoroPhase;
   running: boolean;
@@ -28,7 +27,6 @@ const BUBBLE_SIZE = 88;
 
 export function PomodoroBubble({
   secondsLeft,
-  totalSeconds,
   progress,
   phase,
   running,
@@ -135,7 +133,7 @@ export function PomodoroBubble({
         )}
       </div>
 
-      <div className={`pomodoro-bubble-controls ${hovering ? "visible" : ""}`}>
+      <div className={`pomodoro-bubble-controls ${hovering ? "visible" : "visible md:opacity-0 md:pointer-events-none"}`}>
         <button
           data-bubble-control
           onClick={(e) => { e.stopPropagation(); onToggle(); }}

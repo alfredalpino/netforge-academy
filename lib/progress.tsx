@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import type { AccountCheckIn, ProgressState } from "./types";
-import { DEFAULT_PROGRESS } from "./types";
 import { dayKey } from "./daily-plans";
 import { DAILY_BLOCKS } from "./schedule";
 import {
@@ -15,8 +21,16 @@ import {
   getNextMilestone,
 } from "./journey";
 import { getTotalModules } from "./curriculum";
-
-const STORAGE_KEY = "netforge-progress";
+import { validateProgressImport } from "./progress-schema";
+import {
+  clearProgressStorage,
+  getProgressServerSnapshot,
+  getProgressSnapshot,
+  importProgressState,
+  persistProgressState,
+  subscribeProgress,
+  type PersistResult,
+} from "./progress-storage";
 
 function todayStr(): string {
   return new Date().toISOString().split("T")[0];
@@ -26,25 +40,48 @@ function yesterdayStr(): string {
   return new Date(Date.now() - 86400000).toISOString().split("T")[0];
 }
 
-export function useProgress() {
-  const [progress, setProgress] = useState<ProgressState>(DEFAULT_PROGRESS);
-  const [loaded, setLoaded] = useState(false);
+interface ProgressContextValue {
+  progress: ProgressState;
+  loaded: boolean;
+  lastPersistError: PersistResult | null;
+  completeDay: (week: number, day: number) => void;
+  completeBlock: (week: number, day: number, blockId: string) => void;
+  completeModule: (moduleId: string) => void;
+  setCurrentPosition: (week: number, day: number, moduleId?: string) => void;
+  jumpToMilestone: (moduleId: string) => void;
+  completeTour: (tourId: string) => void;
+  setStartDate: (date: string) => void;
+  setWeeklyGoal: (goal: string) => void;
+  recordCheckIn: (checkIn: AccountCheckIn) => void;
+  setNote: (key: string, note: string) => void;
+  recordDrillResult: (correct: boolean, currentStreak: number, timeSeconds?: number) => void;
+  toggleLabSetup: (stepId: string) => void;
+  toggleFocusChecklist: (key: string) => void;
+  setFocusChecklist: (checklist: Record<string, boolean>) => void;
+  importProgress: (data: unknown) => { success: boolean; error?: string };
+  exportProgress: () => string;
+  resetProgress: () => void;
+  isDayComplete: (week: number, day: number) => boolean;
+  isBlockComplete: (week: number, day: number, blockId: string) => boolean;
+  isModuleComplete: (moduleId: string) => boolean;
+}
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setProgress({ ...DEFAULT_PROGRESS, ...JSON.parse(stored) });
-      }
-    } catch {
-      /* use defaults */
-    }
-    setLoaded(true);
-  }, []);
+const ProgressContext = createContext<ProgressContextValue | null>(null);
 
-  const persist = useCallback((next: ProgressState) => {
-    setProgress(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+export function ProgressProvider({ children }: { children: ReactNode }) {
+  const progress = useSyncExternalStore(
+    subscribeProgress,
+    getProgressSnapshot,
+    getProgressServerSnapshot
+  );
+  const loaded = useSyncExternalStore(
+    subscribeProgress,
+    () => typeof window !== "undefined",
+    () => false
+  );
+
+  const persist = useCallback((next: ProgressState): PersistResult => {
+    return persistProgressState(next);
   }, []);
 
   const updateStreak = useCallback((state: ProgressState): ProgressState => {
@@ -68,11 +105,12 @@ export function useProgress() {
     (week: number, day: number) => {
       const key = dayKey(week, day);
       if (progress.completedDays.includes(key)) return;
-      const next = updateStreak({
-        ...progress,
-        completedDays: [...progress.completedDays, key],
-      });
-      persist(next);
+      persist(
+        updateStreak({
+          ...progress,
+          completedDays: [...progress.completedDays, key],
+        })
+      );
     },
     [progress, persist, updateStreak]
   );
@@ -82,14 +120,15 @@ export function useProgress() {
       const key = dayKey(week, day);
       const existing = progress.completedBlocks[key] ?? [];
       if (existing.includes(blockId)) return;
-      const next = updateStreak({
-        ...progress,
-        completedBlocks: {
-          ...progress.completedBlocks,
-          [key]: [...existing, blockId],
-        },
-      });
-      persist(next);
+      persist(
+        updateStreak({
+          ...progress,
+          completedBlocks: {
+            ...progress.completedBlocks,
+            [key]: [...existing, blockId],
+          },
+        })
+      );
     },
     [progress, persist, updateStreak]
   );
@@ -160,7 +199,7 @@ export function useProgress() {
 
   const setWeeklyGoal = useCallback(
     (goal: string) => {
-      persist({ ...progress, weeklyGoal: goal });
+      persist({ ...progress, weeklyGoal: goal.slice(0, 500) });
     },
     [progress, persist]
   );
@@ -168,14 +207,19 @@ export function useProgress() {
   const recordCheckIn = useCallback(
     (checkIn: AccountCheckIn) => {
       const today = todayStr();
-      const next = checkIn.studied
+      const sanitized: AccountCheckIn = {
+        studied: checkIn.studied,
+        hours: checkIn.hours,
+        reflection: checkIn.reflection?.slice(0, 2000),
+      };
+      const next = sanitized.studied
         ? updateStreak({
             ...progress,
-            checkIns: { ...progress.checkIns, [today]: checkIn },
+            checkIns: { ...progress.checkIns, [today]: sanitized },
           })
         : {
             ...progress,
-            checkIns: { ...progress.checkIns, [today]: checkIn },
+            checkIns: { ...progress.checkIns, [today]: sanitized },
           };
       persist(next);
     },
@@ -184,23 +228,36 @@ export function useProgress() {
 
   const setNote = useCallback(
     (key: string, note: string) => {
-      persist({ ...progress, notes: { ...progress.notes, [key]: note } });
+      persist({ ...progress, notes: { ...progress.notes, [key]: note.slice(0, 5000) } });
     },
     [progress, persist]
   );
 
   const recordDrillResult = useCallback(
-    (correct: boolean, currentStreak: number) => {
+    (correct: boolean, currentStreak: number, timeSeconds?: number) => {
       const stats = progress.drillStats;
-      const next = {
+      const totalAttempts = stats.totalAttempts + 1;
+      const totalTimeSeconds = (stats.totalTimeSeconds ?? 0) + (timeSeconds ?? 0);
+      const timedAttempts =
+        timeSeconds !== undefined
+          ? (stats.totalAttempts > 0 && stats.totalTimeSeconds !== undefined
+              ? stats.totalAttempts
+              : 0) + 1
+          : stats.totalAttempts;
+
+      persist({
         ...progress,
         drillStats: {
           bestStreak: Math.max(stats.bestStreak, correct ? currentStreak : stats.bestStreak),
           totalCorrect: stats.totalCorrect + (correct ? 1 : 0),
-          totalAttempts: stats.totalAttempts + 1,
+          totalAttempts,
+          totalTimeSeconds: timeSeconds !== undefined ? totalTimeSeconds : stats.totalTimeSeconds,
+          averageSeconds:
+            timeSeconds !== undefined && timedAttempts > 0
+              ? totalTimeSeconds / timedAttempts
+              : stats.averageSeconds,
         },
-      };
-      persist(next);
+      });
     },
     [progress, persist]
   );
@@ -208,51 +265,137 @@ export function useProgress() {
   const toggleLabSetup = useCallback(
     (stepId: string) => {
       const done = progress.labSetupComplete.includes(stepId);
-      const next = {
+      persist({
         ...progress,
         labSetupComplete: done
           ? progress.labSetupComplete.filter((id) => id !== stepId)
           : [...progress.labSetupComplete, stepId],
-      };
-      persist(next);
+      });
     },
     [progress, persist]
   );
 
-  const resetProgress = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    setProgress(DEFAULT_PROGRESS);
+  const toggleFocusChecklist = useCallback(
+    (key: string) => {
+      const current = progress.focusChecklists[key] ?? false;
+      persist({
+        ...progress,
+        focusChecklists: {
+          ...progress.focusChecklists,
+          [key]: !current,
+        },
+      });
+    },
+    [progress, persist]
+  );
+
+  const setFocusChecklist = useCallback(
+    (checklist: Record<string, boolean>) => {
+      persist({
+        ...progress,
+        focusChecklists: checklist,
+      });
+    },
+    [progress, persist]
+  );
+
+  const importProgress = useCallback((data: unknown) => {
+    const result = validateProgressImport(data);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    const persistResult = importProgressState(result.data);
+    if (!persistResult.ok) {
+      return { success: false, error: "Failed to save imported progress." };
+    }
+    return { success: true };
   }, []);
 
-  const isDayComplete = (week: number, day: number) =>
-    progress.completedDays.includes(dayKey(week, day));
+  const exportProgress = useCallback(() => {
+    return JSON.stringify(progress, null, 2);
+  }, [progress]);
 
-  const isBlockComplete = (week: number, day: number, blockId: string) =>
-    (progress.completedBlocks[dayKey(week, day)] ?? []).includes(blockId);
+  const resetProgress = useCallback(() => {
+    clearProgressStorage();
+  }, []);
 
-  const isModuleComplete = (moduleId: string) =>
-    progress.completedModules.includes(moduleId);
+  const isDayComplete = useCallback(
+    (week: number, day: number) => progress.completedDays.includes(dayKey(week, day)),
+    [progress.completedDays]
+  );
 
-  return {
-    progress,
-    loaded,
-    completeDay,
-    completeBlock,
-    completeModule,
-    setCurrentPosition,
-    jumpToMilestone,
-    completeTour,
-    setStartDate,
-    setWeeklyGoal,
-    recordCheckIn,
-    setNote,
-    recordDrillResult,
-    toggleLabSetup,
-    resetProgress,
-    isDayComplete,
-    isBlockComplete,
-    isModuleComplete,
-  };
+  const isBlockComplete = useCallback(
+    (week: number, day: number, blockId: string) =>
+      (progress.completedBlocks[dayKey(week, day)] ?? []).includes(blockId),
+    [progress.completedBlocks]
+  );
+
+  const isModuleComplete = useCallback(
+    (moduleId: string) => progress.completedModules.includes(moduleId),
+    [progress.completedModules]
+  );
+
+  const value = useMemo<ProgressContextValue>(
+    () => ({
+      progress,
+      loaded,
+      lastPersistError: null,
+      completeDay,
+      completeBlock,
+      completeModule,
+      setCurrentPosition,
+      jumpToMilestone,
+      completeTour,
+      setStartDate,
+      setWeeklyGoal,
+      recordCheckIn,
+      setNote,
+      recordDrillResult,
+      toggleLabSetup,
+      toggleFocusChecklist,
+      setFocusChecklist,
+      importProgress,
+      exportProgress,
+      resetProgress,
+      isDayComplete,
+      isBlockComplete,
+      isModuleComplete,
+    }),
+    [
+      progress,
+      loaded,
+      completeDay,
+      completeBlock,
+      completeModule,
+      setCurrentPosition,
+      jumpToMilestone,
+      completeTour,
+      setStartDate,
+      setWeeklyGoal,
+      recordCheckIn,
+      setNote,
+      recordDrillResult,
+      toggleLabSetup,
+      toggleFocusChecklist,
+      setFocusChecklist,
+      importProgress,
+      exportProgress,
+      resetProgress,
+      isDayComplete,
+      isBlockComplete,
+      isModuleComplete,
+    ]
+  );
+
+  return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;
+}
+
+export function useProgress() {
+  const ctx = useContext(ProgressContext);
+  if (!ctx) {
+    throw new Error("useProgress must be used within ProgressProvider");
+  }
+  return ctx;
 }
 
 export function getProgressPercent(completedModules: string[], totalModules: number): number {

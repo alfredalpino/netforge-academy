@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { TourStep } from "@/lib/tours";
 
 interface TourBubbleProps {
@@ -62,8 +62,7 @@ export function TourBubble({
     el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
   }, [step.target]);
 
-  // Highlight target element above the dim overlay (sharp, not blurred)
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isCenter || !step.target) return;
 
     const el = document.querySelector(step.target);
@@ -78,7 +77,9 @@ export function TourBubble({
     };
   }, [step.target, stepIndex, isCenter]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // DOM measurement requires syncing layout reads into state for bubble positioning.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- measureTarget reads DOM geometry
     measureTarget();
 
     const onResize = () => measureTarget();
@@ -102,7 +103,7 @@ export function TourBubble({
       timers.forEach(clearTimeout);
       observer?.disconnect();
     };
-  }, [measureTarget, stepIndex]);
+  }, [measureTarget, stepIndex, step.target]);
 
   const hole = targetRect
     ? {

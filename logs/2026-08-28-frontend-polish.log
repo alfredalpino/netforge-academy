@@ -1,0 +1,25 @@
+# Frontend Polish Log — 2026-08-28
+
+## Summary
+Completed frontend polish pass across remaining pages and shared components, aligning all routes with the PageShell / PageHeader / Card design system.
+
+## Files Updated
+
+### Pages
+- `app/accountability/page.tsx` — Fixed broken markup; migrated all sections to Card; added Badge import; wrapped in PageShell
+- `app/drills/subnetting/page.tsx` — PageShell (narrow), PageHeader, stat Badges, Card for drill form
+- `app/focus/page.tsx` — Card for banners/setup/break; Button ghost variants; Badge for mode/phase
+- `app/today/page.tsx` — Daily schedule template wrapped in Card
+- `app/not-found.tsx` — PageShell + EmptyState
+- `app/error.tsx` — PageShell + EmptyState
+
+### Components
+- `components/ProgressTracker.tsx` — Card wrappers, ProgressBar for week progress
+- `components/PomodoroSettingsPanel.tsx` — Input, Select, Card for custom intervals
+
+## Validation
+- `npm run validate` — PASSED (lint, typecheck, 12 tests, build)
+
+## Notes
+- Focus page retains dedicated full-screen layout (no sidebar) by design
+- global-error.tsx left with inline styles (must render outside app layout/providers)
