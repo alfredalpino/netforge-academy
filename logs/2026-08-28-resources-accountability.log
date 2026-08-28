@@ -1,0 +1,46 @@
+# NetForge — Resources, Accountability & Progress Tracker
+Date: 2026-08-28
+
+## Actions Taken
+
+### New Features
+1. **Resource Library** (`/resources`)
+   - Added `lib/resources.ts` with 40+ curated resources (docs, books, videos, labs, cert prep, tools, communities)
+   - Search, filter by type/phase, and free-only toggle
+
+2. **Accountability Tracker** (`/accountability`)
+   - Daily check-in (studied, hours, reflection)
+   - Weekly commitment goal setting
+   - Streak hero with current/longest streak
+   - Accountability score (consistency + module + day progress)
+   - Activity heatmap calendar
+   - Recent check-in history
+   - Settings: start date, reset progress
+
+3. **Improved Progress Tracker**
+   - New `ProgressTracker` component on dashboard
+   - Module + today completion rings
+   - Week progress bar and daily block indicators
+   - Study activity heatmap
+   - Drill stats (accuracy, best streak)
+   - Today page shows block progress bar
+
+### Data Model Extensions (`lib/types.ts`, `lib/progress.ts`)
+- `longestStreak`, `studyHistory`, `weeklyGoal`, `checkIns`, `drillStats`, `labSetupComplete`
+- New hooks: `setWeeklyGoal`, `recordCheckIn`, `recordDrillResult`, `toggleLabSetup`, `isModuleComplete`
+- Helpers: `getWeekProgress`, `getStudyHeatmapData`, `getAccountabilityScore`, `daysSinceStart`
+
+### Integration
+- Curriculum modules: mark complete via `ModuleCard` component
+- Subnet drills: persist all-time stats and best streak
+- Lab setup: functional persisted checkboxes
+- Sidebar: added Accountability and Resources nav items
+
+### New Files
+- `lib/resources.ts`
+- `app/resources/page.tsx`
+- `app/accountability/page.tsx`
+- `components/StreakCalendar.tsx`
+- `components/ProgressTracker.tsx`
+- `components/ModuleCard.tsx`
+- `components/LabSetupChecklist.tsx`

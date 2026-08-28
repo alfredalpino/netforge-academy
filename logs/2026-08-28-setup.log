@@ -1,0 +1,37 @@
+# Action Log — Network Engineering Academy
+
+**Date:** 2026-08-28  
+**Agent:** Cursor Auto  
+**Request:** Analyze Time table.md and create hosted distraction-free learning project
+
+## Actions Taken
+
+1. Analyzed `Ubaid100xHunter/Time table.md` (2,549 lines) — extracted 8 phases, 24 modules, 28-week timeline, daily 7-hour blocks, weekly rhythm, certification gates, lab stack, learning loop.
+
+2. Created new project at:
+   `UBAID-Engineer/network-engineering-academy/`
+
+3. Built Next.js 16 app with:
+   - Dashboard (progress, streak, phase overview)
+   - Focus Mode (distraction-free timer + block checklist)
+   - Today (Week 1–4 day-by-day plans, week/day navigator)
+   - Curriculum browser (all phases and modules)
+   - Subnetting drills (interactive practice)
+   - Certification gates (CCNA → AZ-700)
+   - Lab stack setup guide
+
+4. Structured curriculum data in `lib/curriculum.ts`, `lib/daily-plans.ts`, `lib/schedule.ts`
+
+5. Progress tracking via localStorage (`lib/progress.ts`)
+
+6. Added Vercel deployment config (`vercel.json`, README deploy instructions)
+
+7. Verified production build: `npm run build` — success
+
+## Not Deployed
+
+Vercel MCP requires authentication. User can deploy with `vercel --prod` or connect GitHub repo.
+
+## Note
+
+User wrote "Wale" — interpreted as **Vercel** for hosting. Confirm if different platform intended.
