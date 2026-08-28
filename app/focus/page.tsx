@@ -2,142 +2,173 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FocusTimer } from "@/components/FocusTimer";
 import { useProgress } from "@/lib/progress";
-import { getDayPlan } from "@/lib/daily-plans";
+import { getFocusStudyContent } from "@/lib/focus-content";
 import { DAILY_BLOCKS } from "@/lib/schedule";
-
-const BLOCK_MINUTES: Record<string, number> = {
-  "block-1": 120,
-  "block-2": 90,
-  "block-3": 120,
-  "block-4": 90,
-  "block-5": 60,
-  "block-6": 60,
-};
+import { usePomodoro } from "@/hooks/usePomodoro";
+import { PomodoroBubble } from "@/components/PomodoroBubble";
+import { PomodoroSettingsPanel } from "@/components/PomodoroSettingsPanel";
+import { StudyMaterial } from "@/components/StudyMaterial";
+import { getPhaseLabel } from "@/lib/pomodoro";
 
 export default function FocusPage() {
-  const { progress, completeBlock, isBlockComplete } = useProgress();
-  const plan = getDayPlan(progress.currentWeek, progress.currentDay);
-  const [activeBlock, setActiveBlock] = useState(DAILY_BLOCKS[0].id);
+  const { progress, completeBlock, isBlockComplete, loaded } = useProgress();
+  const pomodoro = usePomodoro();
+
+  const [activeBlockId, setActiveBlockId] = useState(DAILY_BLOCKS[0].id);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  const [showSetup, setShowSetup] = useState(true);
 
-  const block = DAILY_BLOCKS.find((b) => b.id === activeBlock)!;
-  const blockMinutes = BLOCK_MINUTES[activeBlock] ?? 60;
+  const content = getFocusStudyContent(
+    progress.currentWeek,
+    progress.currentDay,
+    progress.currentModuleId,
+    activeBlockId
+  );
 
-  const planItems = (() => {
-    if (!plan) return block.activities;
-    switch (activeBlock) {
-      case "block-1": return plan.theory.length ? plan.theory : block.activities;
-      case "block-2": return plan.config.length ? plan.config : block.activities;
-      case "block-3": return [plan.lab];
-      case "block-4": return plan.breakFix.length ? plan.breakFix : block.activities;
-      case "block-5": return plan.recall.length ? plan.recall : block.activities;
-      default: return block.activities;
-    }
-  })();
-
-  const toggleCheck = (idx: number) => {
-    const key = `${activeBlock}-${idx}`;
+  const toggleCheck = (blockId: string, idx: number) => {
+    const key = `${blockId}-${idx}`;
     setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const allChecked = planItems.every((_, i) => checklist[`${activeBlock}-${i}`]);
+  const handleBlockChange = (blockId: string) => {
+    setActiveBlockId(blockId);
+  };
+
+  const handleStart = () => {
+    setShowSetup(false);
+    pomodoro.startSession();
+  };
+
+  const handleEnd = () => {
+    if (confirm("End focus session? Timer will stop.")) {
+      pomodoro.endSession();
+      setShowSetup(true);
+    }
+  };
+
+  const isBlockDone = (blockId: string) =>
+    isBlockComplete(progress.currentWeek, progress.currentDay, blockId);
+
+  if (!loaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-focus-bg text-muted">
+        Loading...
+      </div>
+    );
+  }
+
+  const isBreak =
+    pomodoro.phase === "short_break" || pomodoro.phase === "long_break";
 
   return (
-    <div className="focus-mode min-h-screen bg-focus-bg">
+    <div className={`focus-mode min-h-screen bg-focus-bg ${isBreak ? "focus-break-mode" : ""}`}>
       {/* Minimal header */}
-      <header className="flex items-center justify-between border-b border-border/50 px-6 py-3">
+      <header className="flex items-center justify-between border-b border-border/40 px-6 py-3">
         <div>
           <span className="font-mono text-xs uppercase tracking-widest text-muted">
             Focus Mode
+            {pomodoro.sessionActive && (
+              <span className="ml-2 text-accent">· {getPhaseLabel(pomodoro.phase)}</span>
+            )}
           </span>
-          {plan && (
-            <p className="text-sm text-foreground/80">
-              W{progress.currentWeek} D{progress.currentDay} — {plan.title}
-            </p>
+          <p className="text-sm text-foreground/80">
+            W{progress.currentWeek} D{progress.currentDay} — {content.dayTitle}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {pomodoro.sessionActive && (
+            <button
+              onClick={() => setShowSetup((s) => !s)}
+              className="text-xs text-muted hover:text-foreground"
+            >
+              {showSetup ? "Hide setup" : "Timer settings"}
+            </button>
+          )}
+          {pomodoro.sessionActive ? (
+            <button onClick={handleEnd} className="text-xs text-warning hover:underline">
+              End session
+            </button>
+          ) : (
+            <Link href="/" className="text-xs text-muted hover:text-foreground">
+              Exit Focus
+            </Link>
           )}
         </div>
-        <Link
-          href="/"
-          className="text-xs text-muted hover:text-foreground"
-        >
-          Exit Focus
-        </Link>
       </header>
 
-      <div className="mx-auto max-w-3xl px-6 py-10">
-        {/* Block selector */}
-        <div data-tour="focus-blocks" className="mb-10 flex flex-wrap justify-center gap-2">
-          {DAILY_BLOCKS.map((b) => {
-            const done = isBlockComplete(progress.currentWeek, progress.currentDay, b.id);
-            return (
-              <button
-                key={b.id}
-                onClick={() => {
-                  setActiveBlock(b.id);
-                  setChecklist({});
-                }}
-                className={`rounded-lg px-3 py-1.5 text-xs transition ${
-                  activeBlock === b.id
-                    ? "bg-accent text-white"
-                    : done
-                      ? "bg-success/15 text-success"
-                      : "bg-surface text-muted hover:text-foreground"
-                }`}
-              >
-                {b.start} {done && "✓"}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Timer */}
-        <div data-tour="focus-timer">
-          <FocusTimer
-          key={activeBlock}
-          initialMinutes={blockMinutes}
-          blockTitle={`${block.start}–${block.end} · ${block.title}`}
-          />
-        </div>
-
-        {/* Checklist only — no distractions */}
-        <section className="mt-12">
-          <h2 className="mb-1 text-center text-sm font-medium">{block.focus}</h2>
-          <ul className="mt-6 space-y-3">
-            {planItems.map((item, i) => (
-              <li key={i}>
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/50 bg-surface/50 px-4 py-3 transition hover:bg-surface">
-                  <input
-                    type="checkbox"
-                    checked={!!checklist[`${activeBlock}-${i}`]}
-                    onChange={() => toggleCheck(i)}
-                    className="mt-0.5 accent-accent"
-                  />
-                  <span className="text-sm leading-relaxed">{item}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-
-          {allChecked && planItems.length > 0 && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={() =>
-                  completeBlock(progress.currentWeek, progress.currentDay, activeBlock)
-                }
-                className="rounded-lg bg-success px-6 py-2.5 text-sm font-medium text-white hover:opacity-90"
-              >
-                Mark Block Complete
-              </button>
+      <div className="mx-auto max-w-4xl px-6 py-8">
+        {/* Setup panel — before start or toggled during session */}
+        {(!pomodoro.sessionActive || showSetup) && (
+          <section className="mb-8 rounded-xl border border-border bg-surface p-6">
+            <h2 className="text-sm font-medium">Pomodoro Timer</h2>
+            <p className="mt-1 text-xs text-muted">
+              Choose your intervals, then start — timer moves to a draggable bubble and your tab title.
+            </p>
+            <div className="mt-4">
+              <PomodoroSettingsPanel
+                presetId={pomodoro.presetId}
+                settings={pomodoro.settings}
+                onChange={pomodoro.updateSettings}
+                disabled={pomodoro.sessionActive && pomodoro.running}
+              />
             </div>
-          )}
-        </section>
+            {!pomodoro.sessionActive && (
+              <button
+                onClick={handleStart}
+                data-tour="focus-timer"
+                className="mt-6 w-full rounded-xl bg-accent py-3.5 text-sm font-semibold text-white hover:bg-accent-dim sm:w-auto sm:px-10"
+              >
+                Start Focus Session
+              </button>
+            )}
+          </section>
+        )}
 
-        <p className="mt-16 text-center text-xs text-muted/60">
-          No social media. No videos. Build, configure, troubleshoot.
+        {/* Break banner */}
+        {pomodoro.sessionActive && isBreak && (
+          <div className="mb-6 rounded-xl border border-success/30 bg-success/10 px-6 py-4 text-center">
+            <p className="text-sm font-medium text-success">
+              {pomodoro.phase === "long_break" ? "Long break time" : "Short break — stretch, hydrate"}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              Session {pomodoro.completedSessions} complete. Bubble timer in corner — hover for controls.
+            </p>
+          </div>
+        )}
+
+        {/* Study material — always visible, primary content */}
+        <StudyMaterial
+          content={content}
+          activeBlockId={activeBlockId}
+          onBlockChange={handleBlockChange}
+          checklist={checklist}
+          onToggleCheck={toggleCheck}
+          isBlockComplete={isBlockDone}
+          onMarkBlockComplete={(blockId) =>
+            completeBlock(progress.currentWeek, progress.currentDay, blockId)
+          }
+        />
+
+        <p className="mt-12 text-center text-xs text-muted/50">
+          No social media. No videos. Study the material, run labs locally.
         </p>
       </div>
+
+      {/* Floating draggable Pomodoro bubble */}
+      <PomodoroBubble
+        visible={pomodoro.sessionActive}
+        secondsLeft={pomodoro.secondsLeft}
+        totalSeconds={pomodoro.totalSeconds}
+        progress={pomodoro.progress}
+        phase={pomodoro.phase}
+        running={pomodoro.running}
+        completedSessions={pomodoro.completedSessions}
+        sessionsBeforeLongBreak={pomodoro.settings.sessionsBeforeLongBreak}
+        onToggle={pomodoro.toggle}
+        onSkip={pomodoro.skipPhase}
+        onReset={pomodoro.resetPhase}
+      />
     </div>
   );
 }

@@ -1,0 +1,17 @@
+# NetForge — Pomodoro Focus Mode Redesign
+Date: 2026-08-28
+
+## Changes
+- Replaced basic timer with full Pomodoro system
+- Presets: Classic (25/5), Deep Focus (50/10), Sprint (15/3), Custom
+- Custom: work, short break, long break, sessions before long break (2–5)
+- Draggable circular bubble timer (position persisted)
+- Tab title shows live countdown (⏱ work / ☕ break)
+- Hover-only bubble controls (play/pause, skip, reset)
+- Study material is primary view (today's plan or curriculum module)
+- Block tabs, checklists, mark complete integration preserved
+
+## New Files
+- lib/pomodoro.ts, lib/focus-content.ts
+- hooks/usePomodoro.ts
+- components/PomodoroBubble.tsx, PomodoroSettingsPanel.tsx, StudyMaterial.tsx
