@@ -51,7 +51,7 @@ export default function TodayPage() {
       </header>
 
       {/* Week navigator */}
-      <div className="mb-8 flex flex-wrap items-center gap-2">
+      <div className="mb-8 flex flex-wrap items-center gap-2" data-tour="today-nav">
         <button
           onClick={() =>
             setCurrentPosition(
@@ -105,7 +105,7 @@ export default function TodayPage() {
 
       {plan ? (
         <>
-          <section className="mb-8 rounded-xl border border-accent/30 bg-surface p-6">
+          <section data-tour="today-plan" className="mb-8 rounded-xl border border-accent/30 bg-surface p-6">
             <h2 className="text-lg font-medium">{plan.title}</h2>
             <p className="mt-1 text-sm text-muted">
               {plan.phase} · {plan.module}

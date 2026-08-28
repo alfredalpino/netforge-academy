@@ -118,6 +118,8 @@ export interface ProgressState {
   drillStats: DrillStats;
   labSetupComplete: string[];
   notes: Record<string, string>;
+  currentModuleId: string;
+  completedTours: string[];
 }
 
 export const DEFAULT_PROGRESS: ProgressState = {
@@ -136,4 +138,6 @@ export const DEFAULT_PROGRESS: ProgressState = {
   drillStats: { bestStreak: 0, totalCorrect: 0, totalAttempts: 0 },
   labSetupComplete: [],
   notes: {},
+  currentModuleId: "m0-foundation",
+  completedTours: [],
 };

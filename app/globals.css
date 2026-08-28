@@ -65,3 +65,244 @@ body {
 .animate-pulse-ring {
   animation: pulse-ring 2s ease-in-out infinite;
 }
+
+/* Tour walkthrough */
+.tour-root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.tour-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+}
+
+.tour-spotlight {
+  position: fixed;
+  border-radius: 12px;
+  border: 2px solid var(--accent);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent),
+    0 0 40px color-mix(in srgb, var(--accent) 30%, transparent);
+  pointer-events: none;
+  z-index: 101;
+  animation: tour-pulse 2s ease-in-out infinite;
+}
+
+.tour-bubble {
+  position: fixed;
+  z-index: 102;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--surface);
+  padding: 20px;
+  pointer-events: auto;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent);
+  animation: tour-bubble-in 0.3s ease-out;
+}
+
+.tour-bubble-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tour-bubble-glow {
+  position: absolute;
+  inset: -1px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, transparent), transparent);
+  pointer-events: none;
+}
+
+.tour-step-badge {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.tour-skip {
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.tour-skip:hover {
+  color: var(--foreground);
+}
+
+.tour-btn-primary {
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.tour-btn-primary:hover {
+  background: var(--accent-dim);
+}
+
+.tour-btn-secondary {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.tour-btn-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--foreground);
+}
+
+.tour-launcher-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 40%, transparent);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.tour-launcher-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 28px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+@keyframes tour-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent), 0 0 40px color-mix(in srgb, var(--accent) 30%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 15%, transparent), 0 0 60px color-mix(in srgb, var(--accent) 40%, transparent); }
+}
+
+@keyframes tour-bubble-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Journey navigator */
+.journey-track-wrapper {
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin: 0 -4px;
+}
+
+.journey-track {
+  display: flex;
+  gap: 4px;
+  min-width: max-content;
+  padding: 8px 4px;
+}
+
+.journey-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 64px;
+}
+
+.journey-node:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+
+.journey-node-current {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.journey-node-complete .journey-dot {
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.journey-node-past .journey-dot {
+  opacity: 0.6;
+}
+
+.journey-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+
+.journey-node-current .journey-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.journey-label {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.journey-node-current .journey-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.journey-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.journey-node:hover .journey-tooltip {
+  opacity: 1;
+}

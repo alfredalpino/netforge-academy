@@ -68,7 +68,7 @@ export default function FocusPage() {
 
       <div className="mx-auto max-w-3xl px-6 py-10">
         {/* Block selector */}
-        <div className="mb-10 flex flex-wrap justify-center gap-2">
+        <div data-tour="focus-blocks" className="mb-10 flex flex-wrap justify-center gap-2">
           {DAILY_BLOCKS.map((b) => {
             const done = isBlockComplete(progress.currentWeek, progress.currentDay, b.id);
             return (
@@ -93,11 +93,13 @@ export default function FocusPage() {
         </div>
 
         {/* Timer */}
-        <FocusTimer
+        <div data-tour="focus-timer">
+          <FocusTimer
           key={activeBlock}
           initialMinutes={blockMinutes}
           blockTitle={`${block.start}–${block.end} · ${block.title}`}
-        />
+          />
+        </div>
 
         {/* Checklist only — no distractions */}
         <section className="mt-12">

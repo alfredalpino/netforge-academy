@@ -4,14 +4,12 @@ import Link from "next/link";
 import { ProgressRing } from "@/components/ProgressRing";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import {
-  getProgressPercent,
   getDayProgressPercent,
   getWeekProgress,
-  getAccountabilityScore,
+  getOverallProgress,
   daysSinceStart,
 } from "@/lib/progress";
 import type { ProgressState } from "@/lib/types";
-import { getTotalModules } from "@/lib/curriculum";
 import { DAILY_BLOCKS } from "@/lib/schedule";
 import { dayKey } from "@/lib/daily-plans";
 
@@ -21,7 +19,7 @@ interface ProgressTrackerProps {
 }
 
 export function ProgressTracker({ progress, compact = false }: ProgressTrackerProps) {
-  const modulePct = getProgressPercent(progress.completedModules, getTotalModules());
+  const overall = getOverallProgress(progress);
   const dayPct = getDayProgressPercent(
     progress.currentWeek,
     progress.currentDay,
@@ -32,16 +30,15 @@ export function ProgressTracker({ progress, compact = false }: ProgressTrackerPr
     progress.completedDays,
     progress.completedBlocks
   );
-  const accountability = getAccountabilityScore(progress);
   const elapsed = daysSinceStart(progress.startDate);
 
   if (compact) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Overall" value={`${overall.overall}%`} accent="text-accent" />
         <StatCard label="Study Streak" value={`${progress.streak}d`} accent="text-success" />
-        <StatCard label="Longest Streak" value={`${progress.longestStreak}d`} />
         <StatCard label="Today's Blocks" value={`${dayPct}%`} />
-        <StatCard label="Accountability" value={`${accountability}%`} accent="text-accent" />
+        <StatCard label="Modules" value={`${overall.completedModules}/${overall.totalModules}`} />
       </div>
     );
   }
@@ -54,19 +51,29 @@ export function ProgressTracker({ progress, compact = false }: ProgressTrackerPr
             <div className="space-y-4">
               <div>
                 <p className="text-xs uppercase tracking-widest text-muted">Overall Progress</p>
-                <p className="mt-1 text-3xl font-semibold">{accountability}%</p>
-                <p className="text-xs text-muted">Accountability score</p>
+                <p className="mt-1 text-3xl font-semibold">{overall.overall}%</p>
+                <p className="text-xs text-muted">
+                  {overall.currentMilestone.shortLabel} · W{progress.currentWeek} D{progress.currentDay}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <MiniStat label="Curriculum" value={`${overall.curriculum}%`} />
+                <MiniStat label="Modules" value={`${overall.modules}%`} />
+                <MiniStat label="Days" value={`${overall.days}%`} />
+                <MiniStat label="Blocks" value={`${overall.blocks}%`} />
+                <MiniStat label="Labs" value={`${overall.labs}%`} />
+                <MiniStat label="Drills" value={`${overall.drills}%`} />
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <MiniStat label="Streak" value={`${progress.streak}d`} color="text-success" />
                 <MiniStat label="Best" value={`${progress.longestStreak}d`} />
-                <MiniStat label="Days Done" value={`${progress.completedDays.length}`} />
+                <MiniStat label="Days Done" value={`${overall.completedDays}`} />
                 <MiniStat label="Elapsed" value={`${elapsed}d`} />
               </div>
             </div>
             <div className="flex gap-6">
-              <ProgressRing percent={modulePct} label="Modules" />
-              <ProgressRing percent={dayPct} size={80} label="Today" />
+              <ProgressRing percent={overall.modules} label="Modules" />
+              <ProgressRing percent={overall.curriculum} size={80} label="Journey" />
             </div>
           </div>
 
@@ -119,14 +126,7 @@ export function ProgressTracker({ progress, compact = false }: ProgressTrackerPr
           <dl className="mt-6 space-y-3">
             <div className="flex justify-between text-sm">
               <dt className="text-muted">Drill accuracy</dt>
-              <dd className="font-mono">
-                {progress.drillStats.totalAttempts > 0
-                  ? Math.round(
-                      (progress.drillStats.totalCorrect / progress.drillStats.totalAttempts) * 100
-                    )
-                  : 0}
-                %
-              </dd>
+              <dd className="font-mono">{overall.drills}%</dd>
             </div>
             <div className="flex justify-between text-sm">
               <dt className="text-muted">Best drill streak</dt>
@@ -135,7 +135,13 @@ export function ProgressTracker({ progress, compact = false }: ProgressTrackerPr
             <div className="flex justify-between text-sm">
               <dt className="text-muted">Modules complete</dt>
               <dd className="font-mono">
-                {progress.completedModules.length}/{getTotalModules()}
+                {overall.completedModules}/{overall.totalModules}
+              </dd>
+            </div>
+            <div className="flex justify-between text-sm">
+              <dt className="text-muted">Blocks complete</dt>
+              <dd className="font-mono">
+                {overall.completedBlocks}/{overall.totalBlocks}
               </dd>
             </div>
           </dl>

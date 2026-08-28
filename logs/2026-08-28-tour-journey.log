@@ -1,0 +1,36 @@
+# NetForge — Tour, Guide & Journey Navigator
+Date: 2026-08-28
+
+## Features Added
+
+### Bubble Walkthrough Tours
+- TourProvider with spotlight bubbles (non-blocking overlay)
+- Auto-starts welcome tour on first visit
+- ? button bottom-right to replay tours (Welcome, Focus, Today)
+- Keyboard: Arrow keys, Enter, Escape
+
+### How to Use Page (`/guide`)
+- Short Q&A format covering daily workflow, journey, progress, key pages
+- "Take the Tour" button
+
+### Learning Journey Navigator
+- 25 milestones: Linux → OSPF → Azure → AZ-700
+- Tap any milestone to jump (updates week, day, module)
+- "Continue →" button for next topic
+- On Dashboard, Curriculum, Accountability pages
+
+### Improved Progress Calculation
+- `getOverallProgress()` weighted score:
+  - Curriculum position 20%
+  - Modules 25%
+  - Days 20%
+  - Blocks 20%
+  - Lab setup 10%
+  - Drill accuracy 5%
+- ProgressTracker shows breakdown (curriculum, modules, days, blocks, labs, drills)
+
+## New Files
+- lib/journey.ts, lib/tours.ts
+- components/TourProvider.tsx, TourBubble.tsx, TourLauncher.tsx
+- components/JourneyNavigator.tsx, AppProviders.tsx
+- app/guide/page.tsx

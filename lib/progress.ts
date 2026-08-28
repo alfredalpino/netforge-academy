@@ -5,6 +5,16 @@ import type { AccountCheckIn, ProgressState } from "./types";
 import { DEFAULT_PROGRESS } from "./types";
 import { dayKey } from "./daily-plans";
 import { DAILY_BLOCKS } from "./schedule";
+import {
+  JOURNEY_MILESTONES,
+  TOTAL_JOURNEY_DAYS,
+  TOTAL_LAB_STEPS,
+  getCurriculumPositionPercent,
+  getMilestoneAtPosition,
+  getMilestoneByModule,
+  getNextMilestone,
+} from "./journey";
+import { getTotalModules } from "./curriculum";
 
 const STORAGE_KEY = "netforge-progress";
 
@@ -102,8 +112,41 @@ export function useProgress() {
   );
 
   const setCurrentPosition = useCallback(
-    (week: number, day: number) => {
-      persist({ ...progress, currentWeek: week, currentDay: day });
+    (week: number, day: number, moduleId?: string) => {
+      const milestone = moduleId
+        ? getMilestoneByModule(moduleId)
+        : getMilestoneAtPosition(week, day);
+      persist({
+        ...progress,
+        currentWeek: week,
+        currentDay: day,
+        currentModuleId: milestone?.moduleId ?? progress.currentModuleId,
+      });
+    },
+    [progress, persist]
+  );
+
+  const jumpToMilestone = useCallback(
+    (moduleId: string) => {
+      const milestone = getMilestoneByModule(moduleId);
+      if (!milestone) return;
+      persist({
+        ...progress,
+        currentWeek: milestone.week,
+        currentDay: milestone.day,
+        currentModuleId: moduleId,
+      });
+    },
+    [progress, persist]
+  );
+
+  const completeTour = useCallback(
+    (tourId: string) => {
+      if (progress.completedTours.includes(tourId)) return;
+      persist({
+        ...progress,
+        completedTours: [...progress.completedTours, tourId],
+      });
     },
     [progress, persist]
   );
@@ -197,6 +240,8 @@ export function useProgress() {
     completeBlock,
     completeModule,
     setCurrentPosition,
+    jumpToMilestone,
+    completeTour,
     setStartDate,
     setWeeklyGoal,
     recordCheckIn,
@@ -277,10 +322,74 @@ export function daysSinceStart(startDate: string): number {
 }
 
 export function getAccountabilityScore(progress: ProgressState): number {
-  const daysStudied = progress.studyHistory.length;
-  const elapsed = Math.max(1, daysSinceStart(progress.startDate));
-  const consistency = Math.round((daysStudied / elapsed) * 100);
-  const modulePct = getProgressPercent(progress.completedModules, 24);
-  const dayPct = Math.round((progress.completedDays.length / 28) * 100);
-  return Math.round(consistency * 0.4 + modulePct * 0.3 + dayPct * 0.3);
+  return getOverallProgress(progress).overall;
+}
+
+export interface OverallProgress {
+  overall: number;
+  curriculum: number;
+  modules: number;
+  days: number;
+  blocks: number;
+  labs: number;
+  drills: number;
+  currentMilestone: (typeof JOURNEY_MILESTONES)[number];
+  nextMilestone?: (typeof JOURNEY_MILESTONES)[number];
+  completedModules: number;
+  totalModules: number;
+  completedDays: number;
+  totalDays: number;
+  completedBlocks: number;
+  totalBlocks: number;
+}
+
+export function getTotalCompletedBlocks(completedBlocks: Record<string, string[]>): number {
+  return Object.values(completedBlocks).reduce((sum, blocks) => sum + blocks.length, 0);
+}
+
+export function getOverallProgress(progress: ProgressState): OverallProgress {
+  const totalModules = getTotalModules();
+  const currentMilestone = getMilestoneAtPosition(progress.currentWeek, progress.currentDay);
+  const nextMilestone = getNextMilestone(currentMilestone.moduleId);
+
+  const curriculum = getCurriculumPositionPercent(progress.currentWeek, progress.currentDay);
+  const modules = getProgressPercent(progress.completedModules, totalModules);
+  const days = Math.round((progress.completedDays.length / TOTAL_JOURNEY_DAYS) * 100);
+
+  const completedBlocks = getTotalCompletedBlocks(progress.completedBlocks);
+  const totalBlocks = TOTAL_JOURNEY_DAYS * DAILY_BLOCKS.length;
+  const blocks = Math.round((completedBlocks / totalBlocks) * 100);
+
+  const labs = Math.round((progress.labSetupComplete.length / TOTAL_LAB_STEPS) * 100);
+  const drills =
+    progress.drillStats.totalAttempts > 0
+      ? Math.round((progress.drillStats.totalCorrect / progress.drillStats.totalAttempts) * 100)
+      : 0;
+
+  const overall = Math.round(
+    curriculum * 0.2 +
+      modules * 0.25 +
+      days * 0.2 +
+      blocks * 0.2 +
+      labs * 0.1 +
+      drills * 0.05
+  );
+
+  return {
+    overall,
+    curriculum,
+    modules,
+    days,
+    blocks,
+    labs,
+    drills,
+    currentMilestone,
+    nextMilestone,
+    completedModules: progress.completedModules.length,
+    totalModules,
+    completedDays: progress.completedDays.length,
+    totalDays: TOTAL_JOURNEY_DAYS,
+    completedBlocks,
+    totalBlocks,
+  };
 }

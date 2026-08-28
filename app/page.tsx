@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ProgressTracker } from "@/components/ProgressTracker";
+import { JourneyNavigator } from "@/components/JourneyNavigator";
 import { useProgress } from "@/lib/progress";
 import { getDayPlan } from "@/lib/daily-plans";
 import { getWeekPhase } from "@/lib/schedule";
@@ -36,6 +37,11 @@ export default function DashboardPage() {
         </p>
       </header>
 
+      {/* Journey navigator */}
+      <div className="mb-8">
+        <JourneyNavigator compact />
+      </div>
+
       {/* Current position + quick actions */}
       <section className="mb-8 rounded-xl border border-border bg-surface p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -55,7 +61,7 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3" data-tour="quick-actions">
           <Link
             href="/focus"
             className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dim"
@@ -90,7 +96,9 @@ export default function DashboardPage() {
       </section>
 
       {/* Improved progress tracker */}
-      <ProgressTracker progress={progress} />
+      <div data-tour="progress">
+        <ProgressTracker progress={progress} />
+      </div>
 
       {/* Learning loop */}
       <section className="mt-8 rounded-xl border border-border bg-surface p-6">

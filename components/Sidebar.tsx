@@ -10,6 +10,7 @@ const NAV = [
   { href: "/accountability", label: "Accountability", icon: "◈" },
   { href: "/curriculum", label: "Curriculum", icon: "☰" },
   { href: "/resources", label: "Resources", icon: "⊡" },
+  { href: "/guide", label: "How to Use", icon: "?" },
   { href: "/drills/subnetting", label: "Subnet Drills", icon: "⊞" },
   { href: "/gates", label: "Cert Gates", icon: "⬡" },
   { href: "/labs", label: "Lab Stack", icon: "⚙" },
@@ -22,7 +23,7 @@ export function Sidebar() {
   if (isFocus) return null;
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-full w-56 flex-col border-r border-border bg-surface">
+    <aside data-tour="sidebar" className="fixed left-0 top-0 z-40 flex h-full w-56 flex-col border-r border-border bg-surface">
       <div className="border-b border-border px-5 py-5">
         <Link href="/" className="block">
           <span className="font-mono text-xs uppercase tracking-widest text-muted">
@@ -39,10 +40,12 @@ export function Sidebar() {
             item.href === "/"
               ? pathname === "/"
               : pathname.startsWith(item.href);
+          const tourAttr = item.href === "/guide" ? { "data-tour": "guide-link" } : {};
           return (
             <Link
               key={item.href}
               href={item.href}
+              {...tourAttr}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 active
                   ? "bg-accent/15 text-accent"

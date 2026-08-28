@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ProgressTracker } from "@/components/ProgressTracker";
+import { JourneyNavigator } from "@/components/JourneyNavigator";
 import {
   useProgress,
   getWeekProgress,
@@ -90,6 +91,10 @@ export default function AccountabilityPage() {
       </section>
 
       <ProgressTracker progress={progress} />
+
+      <div className="mt-8">
+        <JourneyNavigator compact />
+      </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         {/* Daily check-in */}

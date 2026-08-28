@@ -1,0 +1,21 @@
+# NetForge Academy — GitHub & Vercel Deployment
+Date: 2026-08-28
+
+## Actions Taken
+
+1. Initialized standalone git repository in `network-engineering-academy/`
+2. Created GitHub repo: https://github.com/alfredalpino/netforge-academy
+3. Pushed initial commit (45 files) to `main`
+4. Created Vercel project linked to GitHub repo via Vercel MCP
+5. Triggered production deployment
+
+## Repository
+- Name: netforge-academy
+- Account: alfredalpino
+- URL: https://github.com/alfredalpino/netforge-academy
+
+## Vercel Deployment
+- Project: netforge-academy
+- Team: alwaysubaids-projects
+- Production URL: https://netforge-academy-alwaysubaids-projects.vercel.app
+- Deployment ID: dpl_3yt6W28rugN15s7ziasthRHexbrp

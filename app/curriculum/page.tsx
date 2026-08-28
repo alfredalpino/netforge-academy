@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { JourneyNavigator } from "@/components/JourneyNavigator";
 import { PHASES, getTotalModules, LEARNING_LOOP } from "@/lib/curriculum";
 import { TOTAL_WEEKS, TOTAL_HOURS, HOURS_PER_DAY } from "@/lib/schedule";
 
@@ -30,6 +31,10 @@ export default function CurriculumPage() {
           ))}
         </div>
       </section>
+
+      <div className="mb-10">
+        <JourneyNavigator />
+      </div>
 
       <div className="space-y-4">
         {PHASES.map((phase) => (
