@@ -3,87 +3,102 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useProgress } from "@/lib/progress";
 
-const NAV = [
-  { href: "/", label: "Dashboard", icon: "dashboard" },
-  { href: "/focus", label: "Focus Mode", icon: "focus" },
-  { href: "/today", label: "Today", icon: "today" },
-  { href: "/accountability", label: "Accountability", icon: "accountability" },
-  { href: "/curriculum", label: "Curriculum", icon: "curriculum" },
-  { href: "/resources", label: "Resources", icon: "resources" },
-  { href: "/guide", label: "How to Use", icon: "guide" },
-  { href: "/drills", label: "Drills", icon: "drills" },
-  { href: "/gates", label: "Cert Gates", icon: "gates" },
-  { href: "/labs", label: "Lab Stack", icon: "labs" },
+const NAV_GROUPS = [
+  {
+    label: "Study",
+    items: [
+      { href: "/", label: "Dashboard", icon: "dashboard" as const },
+      { href: "/focus", label: "Focus Mode", icon: "focus" as const },
+      { href: "/today", label: "Today", icon: "today" as const },
+      { href: "/accountability", label: "Accountability", icon: "accountability" as const },
+    ],
+  },
+  {
+    label: "Practice",
+    items: [
+      { href: "/drills", label: "Drills", icon: "drills" as const },
+      { href: "/labs", label: "Lab Stack", icon: "labs" as const },
+      { href: "/gates", label: "Cert Gates", icon: "gates" as const },
+    ],
+  },
+  {
+    label: "Academy",
+    items: [
+      { href: "/curriculum", label: "Curriculum", icon: "curriculum" as const },
+      { href: "/resources", label: "Resources", icon: "resources" as const },
+      { href: "/guide", label: "How to Use", icon: "guide" as const },
+    ],
+  },
 ] as const;
 
-function NavIcon({ name }: { name: (typeof NAV)[number]["icon"] }) {
+type NavIconName = (typeof NAV_GROUPS)[number]["items"][number]["icon"];
+
+function NavIcon({ name }: { name: NavIconName }) {
   const common = "h-4 w-4 shrink-0";
   switch (name) {
     case "dashboard":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <circle cx="12" cy="12" r="3" strokeWidth="2" />
+          <path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" strokeWidth="1.75" strokeLinejoin="round" />
         </svg>
       );
     case "focus":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <circle cx="12" cy="12" r="8" strokeWidth="2" />
-          <circle cx="12" cy="12" r="2" fill="currentColor" />
+          <circle cx="12" cy="12" r="8" strokeWidth="1.75" />
+          <circle cx="12" cy="12" r="2.5" fill="currentColor" />
         </svg>
       );
     case "today":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path d="M8 5l8 7-8 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="4" y="5" width="16" height="15" rx="2" strokeWidth="1.75" />
+          <path d="M8 3v4M16 3v4M4 10h16" strokeWidth="1.75" strokeLinecap="round" />
         </svg>
       );
     case "accountability":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path d="M12 3v18M3 12h18" strokeWidth="2" strokeLinecap="round" />
+          <path d="M5 12l4 4L19 6" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     case "curriculum":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="round" />
+          <path d="M4 6h16M4 12h12M4 18h8" strokeWidth="1.75" strokeLinecap="round" />
         </svg>
       );
     case "resources":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <rect x="4" y="4" width="16" height="16" rx="2" strokeWidth="2" />
+          <path d="M5 5h6a2 2 0 012 2v12l-5-2-5 2V7a2 2 0 012-2zM13 5h6a2 2 0 012 2v12l-5-2-5 2" strokeWidth="1.75" strokeLinejoin="round" />
         </svg>
       );
     case "guide":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" strokeWidth="2" />
-          <path d="M12 10v6M12 7h.01" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="12" cy="12" r="9" strokeWidth="1.75" />
+          <path d="M12 10.5v5.5M12 7.5h.01" strokeWidth="1.75" strokeLinecap="round" />
         </svg>
       );
     case "drills":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <rect x="3" y="3" width="8" height="8" strokeWidth="2" />
-          <rect x="13" y="3" width="8" height="8" strokeWidth="2" />
-          <rect x="3" y="13" width="8" height="8" strokeWidth="2" />
-          <rect x="13" y="13" width="8" height="8" strokeWidth="2" />
+          <path d="M4 8h6v6H4zM14 4h6v6h-6zM14 14h6v6h-6zM4 16h6v4H4z" strokeWidth="1.75" />
         </svg>
       );
     case "gates":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z" strokeWidth="2" />
+          <path d="M12 3l8 3.5v5.5c0 5-3.4 9.4-8 10.5-4.6-1.1-8-5.5-8-10.5V6.5L12 3z" strokeWidth="1.75" strokeLinejoin="round" />
         </svg>
       );
     case "labs":
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" strokeWidth="2" />
-          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" strokeWidth="2" />
+          <path d="M9 3h6M10 3v5.2L5.5 18a2 2 0 001.8 3h9.4a2 2 0 001.8-3L14 8.2V3" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
   }
@@ -98,31 +113,56 @@ function NavLinks({
 }) {
   return (
     <>
-      {NAV.map((item) => {
-        const active =
-          item.href === "/"
-            ? pathname === "/"
-            : pathname.startsWith(item.href);
-        const tourAttr = item.href === "/guide" ? { "data-tour": "guide-link" } : {};
+      {NAV_GROUPS.map((group) => (
+        <div key={group.label} className="mb-2">
+          <p className="nav-group-label">{group.label}</p>
+          <div className="space-y-0.5">
+            {group.items.map((item) => {
+              const active =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
+              const tourAttr = item.href === "/guide" ? { "data-tour": "guide-link" } : {};
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            {...tourAttr}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              active
-                ? "bg-accent/15 text-accent"
-                : "text-muted hover:bg-surface-hover hover:text-foreground"
-            }`}
-          >
-            <NavIcon name={item.icon} />
-            {item.label}
-          </Link>
-        );
-      })}
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  {...tourAttr}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    active
+                      ? "bg-accent/12 font-medium text-accent shadow-[inset_3px_0_0_0_var(--accent)]"
+                      : "text-muted hover:bg-surface-hover hover:text-foreground"
+                  }`}
+                >
+                  <NavIcon name={item.icon} />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </>
+  );
+}
+
+function BrandMark({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className="flex items-center gap-3">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 font-display text-sm font-bold text-accent">
+        NF
+      </span>
+      {!compact && (
+        <span className="min-w-0">
+          <span className="font-display block text-base font-semibold tracking-tight text-foreground">
+            NetForge
+          </span>
+          <span className="block text-[0.6875rem] text-muted">Network Engineering Academy</span>
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -130,17 +170,18 @@ export function Sidebar() {
   const pathname = usePathname();
   const isFocus = pathname.startsWith("/focus");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { progress, loaded } = useProgress();
 
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:hidden">
-        <Link href="/" className="font-semibold text-foreground">
-          NetForge
+      <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border/80 bg-surface/90 px-4 backdrop-blur-md md:hidden">
+        <Link href="/" className="font-display font-semibold tracking-tight text-foreground">
+          <BrandMark compact />
         </Link>
         <button
           type="button"
           onClick={() => setMobileOpen((open) => !open)}
-          className="rounded-lg border border-border px-3 py-2 text-sm text-muted hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="rounded-xl border border-border px-3 py-2 text-sm text-muted hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-expanded={mobileOpen}
           aria-controls="mobile-nav"
         >
@@ -151,7 +192,7 @@ export function Sidebar() {
       {mobileOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/55 md:hidden"
           aria-label="Close navigation menu"
           onClick={() => setMobileOpen(false)}
         />
@@ -160,33 +201,37 @@ export function Sidebar() {
       <aside
         id="mobile-nav"
         data-tour="sidebar"
-        className={`fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-border bg-surface transition-transform md:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-border/80 bg-surface/95 backdrop-blur-md transition-transform md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
-        } md:w-56`}
+        } md:w-60`}
       >
-        <div className="border-b border-border px-5 py-5">
+        <div className="border-b border-border/80 px-4 py-5">
           <Link href="/" className="block" onClick={() => setMobileOpen(false)}>
-            <span className="font-mono text-xs uppercase tracking-widest text-muted">
-              NetForge
-            </span>
-            <span className="mt-0.5 block text-sm font-semibold text-foreground">
-              Network Engineering Academy
-            </span>
+            <BrandMark />
           </Link>
         </div>
-        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+        <nav className="flex-1 overflow-y-auto px-2 py-3">
           <NavLinks pathname={pathname} onNavigate={() => setMobileOpen(false)} />
         </nav>
-        <div className="border-t border-border p-4">
+        <div className="space-y-3 border-t border-border/80 p-4">
+          {loaded && (
+            <div className="rounded-xl border border-border/70 bg-surface-elevated/60 px-3 py-2.5">
+              <p className="section-label">Current track</p>
+              <p className="mt-1 font-mono text-xs text-foreground">
+                W{progress.currentWeek} · D{progress.currentDay}
+                {progress.streak > 0 ? ` · ${progress.streak}d streak` : ""}
+              </p>
+            </div>
+          )}
           {isFocus ? (
-            <div className="rounded-lg border border-accent/30 bg-accent/10 px-4 py-2.5 text-center text-sm font-medium text-accent">
+            <div className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-center text-sm font-medium text-accent">
               Focus Mode active
             </div>
           ) : (
             <Link
               href="/focus"
               onClick={() => setMobileOpen(false)}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-[0_10px_24px_-12px_color-mix(in_srgb,var(--accent)_80%,transparent)] transition hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Enter Focus Mode
             </Link>
@@ -201,7 +246,7 @@ export function MainContent({ children }: { children: React.ReactNode }) {
   return (
     <main
       id="main-content"
-      className="min-h-screen overflow-x-hidden pt-14 md:ml-56 md:pt-0"
+      className="min-h-screen overflow-x-hidden pt-14 md:ml-60 md:pt-0"
     >
       {children}
     </main>

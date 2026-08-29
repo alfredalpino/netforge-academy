@@ -19,7 +19,7 @@ export function ConnectionBanner({
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed bottom-4 left-4 right-4 z-[110] flex justify-center md:left-56"
+      className="pointer-events-none fixed bottom-4 left-4 right-4 z-[110] flex justify-center md:left-60"
     >
       <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted shadow-lg">
         <span className="h-2 w-2 shrink-0 rounded-full bg-warning" aria-hidden="true" />

@@ -5,14 +5,14 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "NetForge — Network Engineering Academy",
     short_name: "NetForge",
     description:
-      "Distraction-free 28-week networking curriculum for NOC Analyst and Network Engineer roles.",
+      "Elite 28-week networking curriculum for NOC Analyst and Network Engineer roles.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     display_override: ["window-controls-overlay", "standalone"],
     orientation: "any",
-    theme_color: "#0c0f14",
-    background_color: "#0c0f14",
+    theme_color: "#070b12",
+    background_color: "#070b12",
     categories: ["education", "productivity"],
     icons: [
       {

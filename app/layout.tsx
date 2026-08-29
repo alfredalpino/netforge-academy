@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Syne } from "next/font/google";
 import { Sidebar, MainContent } from "@/components/Sidebar";
 import { AppProviders } from "@/components/AppProviders";
 import "./globals.css";
@@ -14,10 +14,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const syne = Syne({
+  variable: "--font-syne",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+});
+
 export const metadata: Metadata = {
   title: "NetForge — Network Engineering Academy",
   description:
-    "Distraction-free 28-week networking curriculum for NOC Analyst and Network Engineer roles. CCNA, Security+, NSE4, AZ-104, AZ-700.",
+    "Elite 28-week networking curriculum for NOC Analyst and Network Engineer roles. CCNA, Security+, NSE4, AZ-104, AZ-700.",
   applicationName: "NetForge",
   appleWebApp: {
     capable: true,
@@ -37,14 +43,14 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover" as const,
-  themeColor: "#0c0f14",
+  themeColor: "#070b12",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <a
