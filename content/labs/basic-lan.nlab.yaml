@@ -1,0 +1,38 @@
+# basic-lan.nlab.yaml — NetForge lab-as-code (SSoT mirror of content/labs/basic-lan.ts)
+# Imported in-app via the typed TS module until a YAML loader ships.
+id: basic-lan
+title: Basic LAN Connectivity
+difficulty: beginner
+estimatedMinutes: 15
+objectives:
+  - Assign IP addresses on R1 and PC1
+  - Bring interfaces up
+  - Verify PC1 can ping R1
+nodes:
+  R1: { type: router }
+  SW1: { type: switch }
+  PC1: { type: host }
+links:
+  - endpoints: [R1:Gi0/0, SW1:Gi0/1]
+  - endpoints: [SW1:Gi0/2, PC1:eth0]
+checks:
+  - type: interface_up
+    device: R1
+    interface: Gi0/0
+  - type: interface_up
+    device: PC1
+    interface: eth0
+  - type: interface_ip
+    device: R1
+    interface: Gi0/0
+    address: 10.0.0.1
+  - type: interface_ip
+    device: PC1
+    interface: eth0
+    address: 10.0.0.10
+  - type: ping
+    from: PC1
+    to: 10.0.0.1
+    expect: success
+grading:
+  passScore: 80

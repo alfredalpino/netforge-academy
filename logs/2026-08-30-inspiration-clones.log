@@ -1,0 +1,26 @@
+# Log: NetForge inspiration repository clones
+Date: 2026-08-30
+Working directory: network-engineering-academy
+
+## Actions
+1. Created inspiration/ if missing.
+2. Shallow-cloned (--depth 1) seven GitHub repos into inspiration/<owner>-<repo>/ naming.
+3. Captured LICENSE / SPDX, primary language, README snippets, top-level layout, and manifests.
+4. Wrote inspiration/README.md stating reference-only / no production merge policy.
+
+## Clone results
+- joxorsayan/netsim → inspiration/joxorsayan-netsim — OK
+- Alechiis/netsim → inspiration/Alechiis-netsim — OK
+- NETWORKERS-HOME-123/cisco-real-sim → inspiration/NETWORKERS-HOME-123-cisco-real-sim — OK
+- lukaudev/broadcast-studio → inspiration/lukaudev-broadcast-studio — OK
+- srl-labs/containerlab → inspiration/srl-labs-containerlab — OK
+- srl-labs/containerlab-app → inspiration/srl-labs-containerlab-app — OK
+- EvilPrime98/PackeTTrino → inspiration/EvilPrime98-PackeTTrino — OK
+
+## Failures
+None.
+
+## Notes
+- No merges into app source.
+- lukaudev/broadcast-studio: no LICENSE file in tree; GitHub reports NOASSERTION.
+- Alechiis/netsim: LICENSE is AGPL-3.0 (GitHub API NOASSERTION); includes Rust/WASM + React/Vite.

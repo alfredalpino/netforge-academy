@@ -19,6 +19,18 @@
   --radius-lg: 1rem;
   --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -28px rgba(0, 0, 0, 0.7);
   --shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 24px 48px -24px rgba(0, 0, 0, 0.85);
+
+  /* Simulator workspace (additive — extend, do not replace academy tokens) */
+  --sim-canvas-bg: #05080d;
+  --sim-grid: color-mix(in srgb, var(--border) 45%, transparent);
+  --sim-link: color-mix(in srgb, var(--muted) 70%, var(--accent));
+  --sim-link-up: var(--success);
+  --sim-link-down: var(--error);
+  --sim-packet-arp: #fbbf24;
+  --sim-packet-icmp: #4aa3ff;
+  --sim-packet-dhcp: #a78bfa;
+  --sim-panel-width: 280px;
+  --sim-bottom-height: 280px;
 }
 
 @theme inline {
@@ -144,6 +156,34 @@ a:not([class*="rounded"]) {
 .focus-mode {
   background: var(--focus-bg);
   background-image: none;
+}
+
+/* Simulator workspace — dense professional net-eng chrome */
+.sim-workspace {
+  --sim-gap: 0.5rem;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.sim-workspace .sim-panel {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.sim-workspace .sim-canvas-surface {
+  background-color: var(--sim-canvas-bg);
+  background-image:
+    linear-gradient(var(--sim-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--sim-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.sim-workspace .sim-terminal {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  background: #02060b;
+  color: #d7e2ef;
 }
 
 /* Scrollbar */

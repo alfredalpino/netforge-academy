@@ -19,6 +19,7 @@ const NAV_GROUPS = [
     label: "Practice",
     items: [
       { href: "/drills", label: "Drills", icon: "drills" as const },
+      { href: "/simulator", label: "Simulator", icon: "simulator" as const },
       { href: "/labs", label: "Lab Stack", icon: "labs" as const },
       { href: "/gates", label: "Cert Gates", icon: "gates" as const },
     ],
@@ -99,6 +100,13 @@ function NavIcon({ name }: { name: NavIconName }) {
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path d="M9 3h6M10 3v5.2L5.5 18a2 2 0 001.8 3h9.4a2 2 0 001.8-3L14 8.2V3" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case "simulator":
+      return (
+        <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2" strokeWidth="1.75" />
+          <path d="M7 12h2M11 9h2v6h-2M15 12h2" strokeWidth="1.75" strokeLinecap="round" />
         </svg>
       );
   }

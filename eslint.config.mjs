@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Reference clones — never lint as product code
+    "inspiration/**",
   ]),
 ]);
 

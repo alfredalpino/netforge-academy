@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# NetForge inspiration clones (reference-only; keep README trackable)
+inspiration/*
+!inspiration/README.md

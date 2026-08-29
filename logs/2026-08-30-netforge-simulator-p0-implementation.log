@@ -1,0 +1,23 @@
+# NetForge Simulator — P0 implementation log
+Date: 2026-08-30
+
+## Actions
+- Implemented M1 simulator shell: `/simulator` route, Practice nav item, `.sim-workspace` tokens, IDE chrome (palette/canvas/inspector/dock).
+- Implemented M2 engine vertical slice: DES controller, Ethernet/ARP/IPv4/ICMP/static-connected routes, NetForgeOS CLI v1, Vitest ping fixtures (all green).
+- Implemented M3: IndexedDB `netforge-sim`, Basic LAN catalog lab + live grading (`interface_up`, `interface_ip`, `ping`), Score tab + save/restore.
+- Excluded `inspiration/**` from TypeScript + ESLint so clones do not break validate.
+- Added CSP `worker-src 'self' blob:`; scaffolded `simulation/workers/sim.worker.ts` (UI uses main-thread bridge for P0).
+- `npm run validate` passed (lint, typecheck, 27 tests, production build including `/simulator`).
+
+## Intentional P0 deferrals (documented, not drift)
+- Custom SVG/HTML canvas instead of React Flow (swap per docs/05 without engine changes).
+- Textarea terminal instead of xterm.js.
+- Main-thread SimulationController in UI; Worker entry ready for next slice.
+- Freeform palette placement is visual-only; graded path is Sample lab.
+
+## How to try
+1. Open `/simulator`
+2. Click Sample
+3. On R1: enable → conf t → int Gi0/0 → ip address 10.0.0.1 255.255.255.0 → no shut → end
+4. On PC1: enable → conf t → int eth0 → ip address 10.0.0.10 255.255.255.0 → no shut → end → ping 10.0.0.1
+5. Submit → Score tab should show ≥80% / 100%

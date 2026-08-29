@@ -1,0 +1,7 @@
+# Push log — NetForge simulator P0 + P1 plan
+Date: 2026-08-30
+
+- Committed P0 simulator implementation, planning docs, PRD, inspiration README, action logs
+- Excluded: inspiration clones (gitignored), logs/2026-08-29-port-3000-netforge.log (dev noise)
+- Added docs/netforge-simulator/21-phase-p1-maturity-plan.md with locked mature decisions
+- Pushed to origin/main as alfredalpino
