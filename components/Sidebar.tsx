@@ -131,8 +131,6 @@ export function Sidebar() {
   const isFocus = pathname.startsWith("/focus");
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  if (isFocus) return null;
-
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:hidden">
@@ -180,13 +178,19 @@ export function Sidebar() {
           <NavLinks pathname={pathname} onNavigate={() => setMobileOpen(false)} />
         </nav>
         <div className="border-t border-border p-4">
-          <Link
-            href="/focus"
-            onClick={() => setMobileOpen(false)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            Enter Focus Mode
-          </Link>
+          {isFocus ? (
+            <div className="rounded-lg border border-accent/30 bg-accent/10 px-4 py-2.5 text-center text-sm font-medium text-accent">
+              Focus Mode active
+            </div>
+          ) : (
+            <Link
+              href="/focus"
+              onClick={() => setMobileOpen(false)}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              Enter Focus Mode
+            </Link>
+          )}
         </div>
       </aside>
     </>
@@ -194,17 +198,10 @@ export function Sidebar() {
 }
 
 export function MainContent({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isFocus = pathname.startsWith("/focus");
-
   return (
     <main
       id="main-content"
-      className={
-        isFocus
-          ? "min-h-screen"
-          : "min-h-screen overflow-x-hidden pt-14 md:ml-56 md:pt-0"
-      }
+      className="min-h-screen overflow-x-hidden pt-14 md:ml-56 md:pt-0"
     >
       {children}
     </main>
