@@ -5,13 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 export type ConnectionState = "online" | "offline" | "syncing";
 
 export function useConnectionState() {
-  const [state, setState] = useState<ConnectionState>(() =>
-    typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline"
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true
   );
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    const goOnline = () => setState("online");
-    const goOffline = () => setState("offline");
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
 
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
@@ -22,8 +23,10 @@ export function useConnectionState() {
   }, []);
 
   const setSyncing = useCallback((syncing: boolean) => {
-    setState(syncing ? "syncing" : navigator.onLine ? "online" : "offline");
+    setIsSyncing(syncing);
   }, []);
 
-  return { state, setSyncing };
+  const state: ConnectionState = !isOnline ? "offline" : isSyncing ? "syncing" : "online";
+
+  return { state, isOnline, setSyncing };
 }
