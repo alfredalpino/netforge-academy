@@ -1,0 +1,28 @@
+# Phase 3 Accountability Implementation Log
+Date: 2026-08-29
+
+## Changes
+
+### lib/types.ts
+- Added `lastBackupDate: string` to ProgressState (default "")
+
+### lib/progress-schema.ts
+- Added optional `lastBackupDate` to Zod schema
+- Merge default "" in parseStoredProgress and validateProgressImport
+
+### lib/progress.tsx
+- Added `setLastBackupDate(date)` to ProgressContext
+- Added helpers: getCalendarWeekRange, getCalendarWeekCheckIns, daysSinceBackup, needsBackupReminder, formatImportPreview
+
+### components/WeeklyReview.tsx (new)
+- Weekly Review Card: days/blocks progress, weekly goal, calendar-week check-ins, Sunday actions
+
+### app/accountability/page.tsx
+- Backup reminder banner when no export or >= 7 days since last backup
+- Export records lastBackupDate via setLastBackupDate
+- Import validates file and shows preview summary in confirm dialog before overwrite
+- WeeklyReview section added after ProgressTracker
+
+### Tests
+- progress-schema.test.ts: lastBackupDate merge tests
+- progress.test.ts: backup reminder and import preview helper tests

@@ -53,6 +53,7 @@ interface ProgressContextValue {
   setStartDate: (date: string) => void;
   setWeeklyGoal: (goal: string) => void;
   recordCheckIn: (checkIn: AccountCheckIn) => void;
+  setLastBackupDate: (date: string) => void;
   setNote: (key: string, note: string) => void;
   recordDrillResult: (correct: boolean, currentStreak: number, timeSeconds?: number) => void;
   toggleLabSetup: (stepId: string) => void;
@@ -204,6 +205,13 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     [progress, persist]
   );
 
+  const setLastBackupDate = useCallback(
+    (date: string) => {
+      persist({ ...progress, lastBackupDate: date });
+    },
+    [progress, persist]
+  );
+
   const recordCheckIn = useCallback(
     (checkIn: AccountCheckIn) => {
       const today = todayStr();
@@ -349,6 +357,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       setStartDate,
       setWeeklyGoal,
       recordCheckIn,
+      setLastBackupDate,
       setNote,
       recordDrillResult,
       toggleLabSetup,
@@ -373,6 +382,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       setStartDate,
       setWeeklyGoal,
       recordCheckIn,
+      setLastBackupDate,
       setNote,
       recordDrillResult,
       toggleLabSetup,
@@ -427,6 +437,74 @@ export function getWeekProgress(
     blocksComplete += (completedBlocks[key] ?? []).length;
   }
   return { daysComplete, blocksComplete, totalBlocks: 7 * DAILY_BLOCKS.length };
+}
+
+export function getCalendarWeekRange(): { start: string; end: string } {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(now.getDate() - dayOfWeek);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return {
+    start: start.toISOString().split("T")[0],
+    end: end.toISOString().split("T")[0],
+  };
+}
+
+function isDateInRange(date: string, start: string, end: string): boolean {
+  return date >= start && date <= end;
+}
+
+export interface CalendarWeekActivity {
+  date: string;
+  checkIn?: AccountCheckIn;
+  studied: boolean;
+}
+
+export function getCalendarWeekCheckIns(
+  checkIns: Record<string, AccountCheckIn>,
+  studyHistory: string[]
+): CalendarWeekActivity[] {
+  const { start, end } = getCalendarWeekRange();
+  const dates = new Set<string>();
+
+  for (const date of Object.keys(checkIns)) {
+    if (isDateInRange(date, start, end)) dates.add(date);
+  }
+  for (const date of studyHistory) {
+    if (isDateInRange(date, start, end)) dates.add(date);
+  }
+
+  return Array.from(dates)
+    .sort((a, b) => b.localeCompare(a))
+    .map((date) => ({
+      date,
+      checkIn: checkIns[date],
+      studied: checkIns[date]?.studied ?? studyHistory.includes(date),
+    }));
+}
+
+export function daysSinceBackup(lastBackupDate: string): number {
+  if (!lastBackupDate) return Number.POSITIVE_INFINITY;
+  const backup = new Date(lastBackupDate);
+  const today = new Date();
+  return Math.max(0, Math.floor((today.getTime() - backup.getTime()) / 86400000));
+}
+
+export function needsBackupReminder(lastBackupDate: string): boolean {
+  if (!lastBackupDate) return true;
+  return daysSinceBackup(lastBackupDate) >= 7;
+}
+
+export function formatImportPreview(data: ProgressState): string {
+  return [
+    `Position: Week ${data.currentWeek}, Day ${data.currentDay}`,
+    `Streak: ${data.streak} day${data.streak !== 1 ? "s" : ""}`,
+    `Completed modules: ${data.completedModules.length}`,
+    `Completed days: ${data.completedDays.length}`,
+  ].join("\n");
 }
 
 export function getStudyHeatmapData(

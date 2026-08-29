@@ -12,7 +12,7 @@ const NAV = [
   { href: "/curriculum", label: "Curriculum", icon: "curriculum" },
   { href: "/resources", label: "Resources", icon: "resources" },
   { href: "/guide", label: "How to Use", icon: "guide" },
-  { href: "/drills/subnetting", label: "Subnet Drills", icon: "drills" },
+  { href: "/drills", label: "Drills", icon: "drills" },
   { href: "/gates", label: "Cert Gates", icon: "gates" },
   { href: "/labs", label: "Lab Stack", icon: "labs" },
 ] as const;

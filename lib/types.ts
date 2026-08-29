@@ -123,6 +123,7 @@ export interface ProgressState {
   currentModuleId: string;
   completedTours: string[];
   focusChecklists: Record<string, boolean>;
+  lastBackupDate: string;
 }
 
 export const DEFAULT_PROGRESS: ProgressState = {
@@ -144,4 +145,5 @@ export const DEFAULT_PROGRESS: ProgressState = {
   currentModuleId: "m0-foundation",
   completedTours: [],
   focusChecklists: {},
+  lastBackupDate: "",
 };

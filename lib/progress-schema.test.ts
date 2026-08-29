@@ -17,6 +17,16 @@ describe("progress schema", () => {
     expect(parsed.currentWeek).toBe(2);
     expect(parsed.streak).toBe(3);
     expect(parsed.focusChecklists).toEqual({});
+    expect(parsed.lastBackupDate).toBe("");
+  });
+
+  it("preserves lastBackupDate when stored", () => {
+    const stored = JSON.stringify({
+      ...DEFAULT_PROGRESS,
+      lastBackupDate: "2026-08-20",
+    });
+    const parsed = parseStoredProgress(stored);
+    expect(parsed.lastBackupDate).toBe("2026-08-20");
   });
 
   it("rejects invalid import payloads", () => {

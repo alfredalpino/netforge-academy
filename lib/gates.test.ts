@@ -14,12 +14,20 @@ describe("gate progress", () => {
     const gates = getGateProgress({
       ...DEFAULT_PROGRESS,
       drillStats: {
-        bestStreak: 6,
+        bestStreak: 10,
         totalCorrect: 20,
         totalAttempts: 20,
       },
     });
     const ccna = gates.find((g) => g.gate.id === "ccna");
     expect(ccna?.criteria.find((c) => c.id === "subnetting")?.met).toBe(true);
+  });
+
+  it("adds practice CTA when subnetting criterion is unmet", () => {
+    const gates = getGateProgress(DEFAULT_PROGRESS);
+    const ccna = gates.find((g) => g.gate.id === "ccna");
+    const subnetting = ccna?.criteria.find((c) => c.id === "subnetting");
+    expect(subnetting?.met).toBe(false);
+    expect(subnetting?.cta).toEqual({ href: "/drills/subnetting", label: "Practice subnetting" });
   });
 });

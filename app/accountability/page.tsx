@@ -4,13 +4,18 @@ import { useRef, useState } from "react";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ProgressTracker } from "@/components/ProgressTracker";
 import { JourneyNavigator } from "@/components/JourneyNavigator";
+import { WeeklyReview } from "@/components/WeeklyReview";
 import {
   useProgress,
   getWeekProgress,
   getTodayCheckIn,
   getAccountabilityScore,
   daysSinceStart,
+  needsBackupReminder,
+  daysSinceBackup,
 } from "@/lib/progress";
+import { validateProgressImport } from "@/lib/progress-schema";
+import type { ProgressState } from "@/lib/types";
 import { getWeekPhase } from "@/lib/schedule";
 import { PageShell } from "@/components/ui/PageShell";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -32,6 +37,7 @@ export default function AccountabilityPage() {
     resetProgress,
     exportProgress,
     importProgress,
+    setLastBackupDate,
   } = useProgress();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
@@ -51,6 +57,7 @@ export default function AccountabilityPage() {
   const [hours, setHours] = useState(todayCheckIn?.hours?.toString() ?? "");
   const [reflection, setReflection] = useState(todayCheckIn?.reflection ?? "");
   const [weeklyGoal, setWeeklyGoalLocal] = useState(progress.weeklyGoal);
+  const [importPreview, setImportPreview] = useState<ProgressState | null>(null);
 
   if (!loaded) return <PageSkeleton />;
 
@@ -71,6 +78,7 @@ export default function AccountabilityPage() {
     anchor.download = `netforge-progress-${today}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
+    setLastBackupDate(today);
     showToast("Progress exported");
   };
 
@@ -81,21 +89,12 @@ export default function AccountabilityPage() {
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      const ok = await confirm({
-        title: "Import progress?",
-        message: "This will replace your current progress with the imported file.",
-        confirmLabel: "Import",
-        tone: "danger",
-      });
-      if (!ok) return;
-
-      const result = importProgress(data);
-      if (result.success) {
-        showToast("Progress imported successfully");
-        window.location.reload();
-      } else {
-        showToast(result.error ?? "Import failed", "error");
+      const validated = validateProgressImport(data);
+      if (!validated.success) {
+        showToast(validated.error ?? "Invalid progress file", "error");
+        return;
       }
+      setImportPreview(validated.data);
     } catch {
       showToast("Invalid progress file", "error");
     } finally {
@@ -103,9 +102,32 @@ export default function AccountabilityPage() {
     }
   };
 
+  const handleConfirmImport = async () => {
+    if (!importPreview) return;
+
+    const ok = await confirm({
+      title: "Import progress?",
+      message: "This will replace your current progress with the imported file.",
+      confirmLabel: "Import",
+      tone: "danger",
+    });
+    if (!ok) return;
+
+    const result = importProgress(importPreview);
+    if (result.success) {
+      showToast("Progress imported successfully");
+      window.location.reload();
+    } else {
+      showToast(result.error ?? "Import failed", "error");
+    }
+  };
+
   const recentCheckIns = Object.entries(progress.checkIns)
     .sort(([a], [b]) => b.localeCompare(a))
     .slice(0, 7);
+
+  const showBackupReminder = needsBackupReminder(progress.lastBackupDate);
+  const backupDays = daysSinceBackup(progress.lastBackupDate);
 
   return (
     <PageShell>
@@ -119,6 +141,24 @@ export default function AccountabilityPage() {
           ) : undefined
         }
       />
+
+      {showBackupReminder && (
+        <Card className="mb-8 border-warning/30 bg-warning/5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-warning">Backup recommended</p>
+              <p className="mt-1 text-xs text-muted">
+                {progress.lastBackupDate
+                  ? `Last export was ${backupDays} day${backupDays !== 1 ? "s" : ""} ago (${progress.lastBackupDate}). Export your progress to avoid losing data.`
+                  : "You haven't exported your progress yet. Export regularly — localStorage can be cleared."}
+              </p>
+            </div>
+            <Button variant="secondary" onClick={handleExport}>
+              Export Progress
+            </Button>
+          </div>
+        </Card>
+      )}
 
       <Card className="mb-8 border-success/30 bg-success/5">
         <div className="flex flex-wrap items-center justify-between gap-6">
@@ -145,6 +185,8 @@ export default function AccountabilityPage() {
       </Card>
 
       <ProgressTracker progress={progress} />
+
+      <WeeklyReview progress={progress} />
 
       <div className="mt-8">
         <JourneyNavigator compact />
@@ -309,6 +351,45 @@ export default function AccountabilityPage() {
             onChange={handleImport}
           />
         </div>
+
+        {importPreview && (
+          <Card className="mt-6 border-accent/30 bg-accent/5 p-4">
+            <h3 className="text-sm font-medium">Import Preview</h3>
+            <p className="mt-1 text-xs text-muted">
+              Review the imported data before overwriting your current progress.
+            </p>
+            <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-xs text-muted">Position</dt>
+                <dd className="font-mono">
+                  Week {importPreview.currentWeek}, Day {importPreview.currentDay}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Streak</dt>
+                <dd className="font-mono">
+                  {importPreview.streak} day{importPreview.streak !== 1 ? "s" : ""}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Completed modules</dt>
+                <dd className="font-mono">{importPreview.completedModules.length}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Completed days</dt>
+                <dd className="font-mono">{importPreview.completedDays.length}</dd>
+              </div>
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button variant="danger" onClick={handleConfirmImport}>
+                Confirm Import
+              </Button>
+              <Button variant="secondary" onClick={() => setImportPreview(null)}>
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        )}
 
         <div className="mt-6 border-t border-border pt-4">
           <Button

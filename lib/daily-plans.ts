@@ -1,6 +1,6 @@
 import type { DayPlan } from "./types";
 
-/** Week 1–4 day-by-day curriculum derived from the timetable Phase 0 & Phase 1 */
+/** Week 1–6 day-by-day curriculum derived from the timetable Phase 0–Phase 2 */
 export const DAILY_PLANS: DayPlan[] = [
   // WEEK 1 — Phase 0: Engineering Foundation
   {
@@ -262,6 +262,138 @@ export const DAILY_PLANS: DayPlan[] = [
     lab: "Light review only",
     breakFix: [],
     recall: ["Celebrate Phase 1 completion", "Set Phase 2 goals"],
+  },
+
+  // WEEK 5 — Phase 2: VLANs
+  {
+    week: 5, day: 1, dayOfWeek: "Monday", phase: "Phase 2", module: "VLANs",
+    title: "VLAN Fundamentals & Access Ports",
+    theory: ["Broadcast domain vs collision domain", "VLAN purpose: segmentation without new hardware", "Access port behavior", "Default VLAN 1", "show vlan brief interpretation"],
+    config: ["vlan 10, vlan 20", "switchport mode access", "switchport access vlan <id>", "name VLANs on switch"],
+    lab: "Packet Tracer: 1 switch, 4 PCs — assign VLAN 10 (Sales) and VLAN 20 (Engineering). Verify same-VLAN ping works, cross-VLAN fails.",
+    breakFix: ["Break: PC on wrong access VLAN", "Break: port left in VLAN 1", "Fix with show vlan brief + switchport commands"],
+    recall: ["Why can't VLAN 10 ping VLAN 20 without a router?", "Draw switch with two VLANs and label broadcast domains"],
+  },
+  {
+    week: 5, day: 2, dayOfWeek: "Tuesday", phase: "Phase 2", module: "VLANs",
+    title: "802.1Q Trunking & Native VLAN",
+    theory: ["Trunk carries multiple VLANs", "802.1Q tag fields (TPID, PCP, VID)", "Tagged vs untagged frames", "Native VLAN mismatch risk", "DTP overview (auto/desirable/nonegotiate)"],
+    config: ["switchport trunk encapsulation dot1q", "switchport mode trunk", "switchport trunk allowed vlan", "switchport trunk native vlan"],
+    lab: "Two-switch topology: PCs on VLAN 10 and 20 across switches. Configure dot1Q trunk. Capture/verify with show interfaces trunk.",
+    breakFix: ["Break: trunk set to access on one side", "Break: native VLAN mismatch", "Break: allowed VLAN list missing VLAN 20"],
+    recall: ["What happens to untagged traffic on a trunk?", "Explain native VLAN mismatch symptom"],
+  },
+  {
+    week: 5, day: 3, dayOfWeek: "Wednesday", phase: "Phase 2", module: "VLANs",
+    title: "Inter-VLAN Routing with SVIs",
+    theory: ["L3 switch as default gateway per VLAN", "SVI = VLAN interface with IP", "Routing between VLANs on same switch", "ip routing on multilayer switch", "Connected/directly connected routes"],
+    config: ["interface vlan 10 / ip address", "interface vlan 20 / ip address", "ip routing", "PC default gateways → SVI IPs"],
+    lab: "Multilayer switch: VLAN 10 (192.168.10.0/24) and VLAN 20 (192.168.20.0/24). Configure SVIs. Full inter-VLAN connectivity.",
+    breakFix: ["Break: SVI shut down", "Break: wrong SVI IP/mask", "Break: ip routing disabled", "Break: PC gateway wrong"],
+    recall: ["Draw inter-VLAN flow: PC-A → SVI → PC-B", "Difference between SVI and subinterface?"],
+  },
+  {
+    week: 5, day: 4, dayOfWeek: "Thursday", phase: "Phase 2", module: "VLANs",
+    title: "Router-on-a-Stick (ROAS)",
+    theory: ["When to use external router vs L3 switch", "Subinterfaces and 802.1Q encapsulation", "One physical link, multiple VLAN gateways", "ROAS scaling limits", "Trunk from router to switch"],
+    config: ["interface g0/0.10 encapsulation dot1Q 10", "interface g0/0.20 encapsulation dot1Q 20", "ip address on each subinterface", "Trunk to router port"],
+    lab: "L2 switch + router: VLAN 10 & 20 with ROAS. Remove L3 switch from yesterday's lab — achieve same connectivity with router subinterfaces.",
+    breakFix: ["Break: missing encapsulation dot1Q", "Break: native VLAN on trunk conflicts with subinterface", "Break: subinterface admin down"],
+    recall: ["Compare ROAS vs SVI — when use each?", "Write ROAS config from memory"],
+  },
+  {
+    week: 5, day: 5, dayOfWeek: "Friday", phase: "Phase 2", module: "VLANs",
+    title: "Integrated VLAN Lab",
+    theory: ["VLAN design best practices", "Management VLAN separation", "Voice VLAN intro", "Documenting VLAN scheme"],
+    config: ["Multi-switch VLAN design", "Access + trunk + SVI or ROAS combined", "show vlan, show interfaces trunk, show ip route"],
+    lab: "EVE-NG/PT: 2 switches, 1 router or L3 switch, 3 VLANs (10/20/99 mgmt), 6 PCs. Full connectivity + management VLAN. Write VLAN table.",
+    breakFix: ["Inject VLAN mismatch, trunk down, missing SVI, wrong gateway — fix all 4"],
+    recall: ["Present VLAN design as engineering doc", "List every show command for VLAN troubleshooting"],
+  },
+  {
+    week: 5, day: 6, dayOfWeek: "Saturday", phase: "Phase 2", module: "Assessment",
+    title: "Week 5 VLAN Assessment",
+    theory: ["1 hr: access vs trunk, 802.1Q, native VLAN, inter-VLAN routing theory"],
+    config: ["1 hr: build VLAN topology from diagram — access, trunk, SVI or ROAS"],
+    lab: "2 hr VLAN troubleshooting: 5 injected failures (mismatch, native VLAN, missing route, wrong gateway, trunk allowed list)",
+    breakFix: ["Fix all 5 failures using show vlan, show interfaces trunk, show ip route"],
+    recall: ["1 hr interview: explain inter-VLAN routing paths", "Draw ROAS and SVI topologies from memory"],
+    gate: "VLAN competency: configure access/trunk, inter-VLAN routing via SVI or ROAS",
+  },
+  {
+    week: 5, day: 7, dayOfWeek: "Sunday", phase: "Phase 2", module: "Review",
+    title: "Recovery & Review",
+    theory: ["Review VLAN week mistakes", "Flashcards: 802.1Q, native VLAN, SVI"],
+    config: [],
+    lab: "Light Packet Tracer review — rebuild mini VLAN lab in 20 min",
+    breakFix: [],
+    recall: ["Subnetting warm-up (10 problems)", "Preview STP — why do switches need loop prevention?"],
+  },
+
+  // WEEK 6 — Phase 2: STP & Layer-2 Resiliency
+  {
+    week: 6, day: 1, dayOfWeek: "Monday", phase: "Phase 2", module: "STP",
+    title: "STP Fundamentals & Loop Danger",
+    theory: ["Broadcast storm mechanism", "MAC table instability", "Duplicate frames", "STP purpose: logical loop-free topology", "802.1D overview: BPDUs block redundant paths"],
+    config: ["Observe default STP on switches", "show spanning-tree", "show spanning-tree vlan <id>"],
+    lab: "Packet Tracer: triangle topology (3 switches, 3 links). Before STP converges, observe blocked port. Document root bridge election.",
+    breakFix: ["Break: disable STP on one switch (if lab allows) — observe storm symptoms", "Re-enable and verify convergence"],
+    recall: ["What three problems does a L2 loop cause?", "Why is STP required in redundant topologies?"],
+  },
+  {
+    week: 6, day: 2, dayOfWeek: "Tuesday", phase: "Phase 2", module: "STP",
+    title: "Root Bridge, Port Roles & States",
+    theory: ["Root bridge election (lowest bridge ID)", "Bridge ID = priority + MAC", "Port roles: Root, Designated, Alternate/Blocked", "Port states: Blocking, Listening, Learning, Forwarding", "spanning-tree vlan <id> root primary/secondary"],
+    config: ["spanning-tree vlan 1 root primary", "spanning-tree vlan 1 priority 4096", "show spanning-tree detail"],
+    lab: "Same triangle topology: manually set root bridge on SW1. Verify which ports become Root/Designated/Alternate on each switch.",
+    breakFix: ["Break: unexpected root bridge — wrong priority", "Break: suboptimal blocked port — fix root placement"],
+    recall: ["Draw triangle with port roles labeled", "How is root bridge elected step by step?"],
+  },
+  {
+    week: 6, day: 3, dayOfWeek: "Wednesday", phase: "Phase 2", module: "STP",
+    title: "RSTP & BPDU Deep Dive",
+    theory: ["802.1w RSTP improvements", "RSTP port roles: Alternate, Backup", "Proposal/agreement sync", "BPDU fields and hello timer", "PVST+ vs RSTP vs MST overview"],
+    config: ["spanning-tree mode rapid-pvst", "spanning-tree portfast (preview)", "debug spanning-tree events (lab only)"],
+    lab: "Convert triangle lab to rapid-PVST. Unplug active link — measure reconvergence. Compare to classic STP timing.",
+    breakFix: ["Break: mixed STP modes between switches", "Break: BPDU not received — port stays forwarding"],
+    recall: ["RSTP vs STP convergence difference", "What does a BPDU contain?"],
+  },
+  {
+    week: 6, day: 4, dayOfWeek: "Thursday", phase: "Phase 2", module: "STP",
+    title: "PortFast, BPDU Guard & Edge Ports",
+    theory: ["PortFast: skip listening/learning on access ports", "BPDU Guard: shut port if BPDU received", "Where PortFast is safe (end hosts only)", "Root Guard and Loop Guard intro", "spanning-tree bpduguard enable"],
+    config: ["spanning-tree portfast", "spanning-tree bpduguard enable", "spanning-tree guard root (on trunk ports)"],
+    lab: "Access port with PC: enable PortFast — verify immediate forwarding. Connect switch to PortFast port — observe BPDU Guard err-disable.",
+    breakFix: ["Break: PortFast on trunk — diagnose risk", "Break: err-disabled port from BPDU Guard — recover with shut/no shut after fix"],
+    recall: ["When must you NOT use PortFast?", "Explain BPDU Guard purpose in one sentence"],
+  },
+  {
+    week: 6, day: 5, dayOfWeek: "Friday", phase: "Phase 2", module: "STP",
+    title: "EtherChannel & LACP",
+    theory: ["EtherChannel benefits: bandwidth + redundancy", "PAgP vs LACP (802.3ad)", "LACP active/passive modes", "EtherChannel constraints: speed, duplex, VLAN, STP treated as one link", "Load balancing across member links"],
+    config: ["interface range g0/1-2", "channel-group 1 mode active", "interface port-channel 1", "show etherchannel summary"],
+    lab: "Two switches with dual links: configure LACP EtherChannel. Verify STP sees one logical link. Fail one member — traffic continues.",
+    breakFix: ["Break: mode mismatch (active on one side, on other)", "Break: inconsistent VLAN/trunk on member port", "Break: channel not forming — mismatched speed"],
+    recall: ["Draw before/after STP with EtherChannel", "LACP active vs passive — when to use each?"],
+  },
+  {
+    week: 6, day: 6, dayOfWeek: "Saturday", phase: "Phase 2", module: "Assessment",
+    title: "Week 6 STP Assessment",
+    theory: ["1 hr: STP/RSTP theory, port roles, BPDU, PortFast, EtherChannel"],
+    config: ["1 hr: triangle topology — set root, enable RSTP, configure PortFast on access ports"],
+    lab: "2 hr STP troubleshooting: 5 failures (wrong root, loop from disabled STP, BPDU Guard err-disable, EtherChannel mismatch, blocked port)",
+    breakFix: ["Fix all 5 using show spanning-tree, show etherchannel summary, show interfaces status err-disabled"],
+    recall: ["1 hr interview: explain STP convergence after link failure", "Design redundant L2 topology that is loop-safe"],
+    gate: "STP competency: predict blocked ports, configure RSTP, PortFast/BPDU Guard, LACP EtherChannel",
+  },
+  {
+    week: 6, day: 7, dayOfWeek: "Sunday", phase: "Phase 2", module: "Review",
+    title: "Recovery & Review",
+    theory: ["Review STP week mistakes", "Flashcards: port roles, BPDU, EtherChannel"],
+    config: [],
+    lab: "Light review — draw triangle topology with STP port states from memory",
+    breakFix: [],
+    recall: ["Subnetting warm-up (10 problems)", "Preview Phase 3 routing — static routes and OSPF"],
   },
 ];
 

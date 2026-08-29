@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useProgress } from "@/lib/progress";
 import { getFocusStudyContent } from "@/lib/focus-content";
@@ -18,6 +18,14 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getModule } from "@/lib/curriculum";
+import { FocusShortcutsHelp } from "@/components/FocusShortcutsHelp";
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA") return true;
+  return target.isContentEditable;
+}
 
 export default function FocusPage() {
   const {
@@ -30,9 +38,11 @@ export default function FocusPage() {
   const { confirm } = useConfirm();
   const { showToast } = useToast();
   const pomodoro = usePomodoro();
+  const { sessionActive, toggle: togglePomodoro } = pomodoro;
 
   const [activeBlockId, setActiveBlockId] = useState(DAILY_BLOCKS[0].id);
   const [showSetup, setShowSetup] = useState(true);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
   const content = getFocusStudyContent(
     progress.currentWeek,
@@ -56,6 +66,50 @@ export default function FocusPage() {
   const handleBlockChange = (blockId: string) => {
     setActiveBlockId(blockId);
   };
+
+  const cycleNextBlock = useCallback(() => {
+    const blockIds = content.sections.map((s) => s.blockId);
+    if (blockIds.length === 0) return;
+    const currentIndex = blockIds.indexOf(activeBlockId);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % blockIds.length;
+    setActiveBlockId(blockIds[nextIndex]);
+  }, [content.sections, activeBlockId]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return;
+
+      if (event.key === "Escape") {
+        if (showShortcutsHelp) {
+          event.preventDefault();
+          setShowShortcutsHelp(false);
+        }
+        return;
+      }
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setShowShortcutsHelp((open) => !open);
+        return;
+      }
+
+      if (event.key === " " || event.code === "Space") {
+        if (sessionActive) {
+          event.preventDefault();
+          togglePomodoro();
+        }
+        return;
+      }
+
+      if (event.key === "n" || event.key === "N") {
+        event.preventDefault();
+        cycleNextBlock();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showShortcutsHelp, sessionActive, togglePomodoro, cycleNextBlock]);
 
   const handleStart = () => {
     setShowSetup(false);
@@ -108,6 +162,9 @@ export default function FocusPage() {
           <p className="mt-1 text-sm text-foreground/80">
             W{progress.currentWeek} D{progress.currentDay} — {content.dayTitle}
           </p>
+          {pomodoro.sessionActive && (
+            <p className="mt-0.5 text-xs text-muted/70">Press ? for shortcuts</p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {pomodoro.sessionActive && (
@@ -138,7 +195,7 @@ export default function FocusPage() {
           <Card className="mb-6 border-warning/30 bg-warning/10">
             <p className="font-medium text-warning">Module study mode</p>
             <p className="mt-1 text-sm text-muted">
-              Detailed day plans cover weeks 1–4 only. You&apos;re studying from the{" "}
+              Detailed day plans cover weeks 1–6 only. You&apos;re studying from the{" "}
               <Link
                 href={`/curriculum/${moduleInfo?.phase.id ?? "phase-0"}`}
                 className="text-accent hover:underline"
@@ -214,6 +271,11 @@ export default function FocusPage() {
         onToggle={pomodoro.toggle}
         onSkip={pomodoro.skipPhase}
         onReset={pomodoro.resetPhase}
+      />
+
+      <FocusShortcutsHelp
+        open={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
       />
     </div>
   );

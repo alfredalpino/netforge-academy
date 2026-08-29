@@ -9,7 +9,7 @@ Not another video course. This is a structured execution system:
 - **28-week curriculum** — 8 phases, 24 modules (Phase 0 → Azure L3)
 - **Daily 7-hour schedule** — Theory → Config → Lab → Break/Fix → Recall
 - **Focus Mode** — Pomodoro timer + checklist, no sidebar distractions
-- **Week 1–4 day-by-day plans** — theory, commands, labs, break/fix, recall, gates
+- **Week 1–6 day-by-day plans** — theory, commands, labs, break/fix, recall, gates
 - **Subnetting drills** — timed practice with instant feedback
 - **Progress tracking** — streaks, blocks, modules, export/import (localStorage)
 - **Certification gates** — readiness tracked from modules, drills, and lab setup
@@ -58,7 +58,10 @@ Or connect the GitHub repo to [vercel.com](https://vercel.com) for automatic dep
 | `/curriculum` | Phase & module browser |
 | `/resources` | Filterable external resource library |
 | `/guide` | How-to-use FAQ and tours |
+| `/drills` | Drill dashboard — subnet, VLSM, recall |
 | `/drills/subnetting` | Timed subnet practice |
+| `/drills/vlsm` | VLSM design drills |
+| `/drills/recall` | Recall flashcards from daily plans |
 | `/gates` | Certification gate readiness |
 | `/labs` | Lab stack setup checklist |
 
@@ -94,7 +97,7 @@ Packets → Protocols → Switching → Routing → Services → Security
 
 **Priority path:** Phase 0 → 1 → 2 → 3 before touching FortiGate, BGP, or AZ-700.
 
-**Note:** Detailed day-by-day plans exist for weeks 1–4. Weeks 5–28 use module-based study content in Today and Focus Mode.
+**Note:** Detailed day-by-day plans exist for weeks 1–6. Weeks 7–28 use module-based study content in Today and Focus Mode.
 
 ## Data & Privacy
 

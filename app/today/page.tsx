@@ -178,7 +178,7 @@ export default function TodayPage() {
         <Card className="mb-8 border-warning/30 bg-warning/5">
           <h2 className="text-lg font-medium text-warning">Module study mode</h2>
           <p className="mt-2 text-sm text-muted">
-            Detailed day-by-day plans are available for weeks 1–4. For week {progress.currentWeek},
+            Detailed day-by-day plans are available for weeks 1–6. For week {progress.currentWeek},
             study from the current curriculum module and use Focus Mode for your daily blocks.
           </p>
           {moduleInfo && (

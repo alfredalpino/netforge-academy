@@ -58,7 +58,7 @@ export default function DashboardPage() {
           </p>
         ) : (
           <p className="mt-3 text-sm text-warning">
-            Module study mode — detailed day plan available for weeks 1–4
+            Module study mode — detailed day plan available for weeks 1–6
           </p>
         )}
 

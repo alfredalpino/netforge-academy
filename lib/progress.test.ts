@@ -3,6 +3,9 @@ import {
   getDayProgressPercent,
   getOverallProgress,
   getStudyHeatmapData,
+  needsBackupReminder,
+  daysSinceBackup,
+  formatImportPreview,
 } from "./progress";
 import { DEFAULT_PROGRESS } from "./types";
 
@@ -26,5 +29,31 @@ describe("progress helpers", () => {
     const data = getStudyHeatmapData(["2026-08-28", "2026-08-28"], 2);
     expect(data.length).toBeGreaterThan(0);
     expect(data.some((d) => d.level > 0)).toBe(true);
+  });
+
+  it("detects backup reminder when never backed up", () => {
+    expect(needsBackupReminder("")).toBe(true);
+    expect(daysSinceBackup("")).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it("detects backup reminder after 7 days", () => {
+    const eightDaysAgo = new Date(Date.now() - 8 * 86400000).toISOString().split("T")[0];
+    expect(needsBackupReminder(eightDaysAgo)).toBe(true);
+    expect(daysSinceBackup(eightDaysAgo)).toBeGreaterThanOrEqual(8);
+  });
+
+  it("formats import preview summary", () => {
+    const preview = formatImportPreview({
+      ...DEFAULT_PROGRESS,
+      currentWeek: 3,
+      currentDay: 2,
+      streak: 5,
+      completedModules: ["m0-foundation", "m1-subnetting"],
+      completedDays: ["w1-d1", "w1-d2"],
+    });
+    expect(preview).toContain("Week 3, Day 2");
+    expect(preview).toContain("Streak: 5 days");
+    expect(preview).toContain("Completed modules: 2");
+    expect(preview).toContain("Completed days: 2");
   });
 });

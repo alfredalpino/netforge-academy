@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { LAB_STACK } from "@/lib/curriculum";
+import { getWeekLabRunbooks } from "@/lib/lab-runbooks";
+import { useProgress } from "@/lib/progress";
 import { LabSetupChecklist } from "@/components/LabSetupChecklist";
 import { PageShell } from "@/components/ui/PageShell";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -8,6 +12,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 
 export default function LabsPage() {
+  const { progress, loaded } = useProgress();
+  const weekRunbooks = loaded ? getWeekLabRunbooks(progress.currentWeek) : [];
+
   return (
     <PageShell>
       <PageHeader
@@ -37,6 +44,51 @@ export default function LabsPage() {
           ))}
         </div>
       </section>
+
+      {weekRunbooks.length > 0 && (
+        <section className="mb-10">
+          <h2 className="mb-4 text-sm font-medium">
+            This week&apos;s lab runbooks
+            <span className="ml-2 text-muted">(Week {progress.currentWeek})</span>
+          </h2>
+          <div className="grid gap-4">
+            {weekRunbooks.map((runbook) => (
+              <Card key={`w${runbook.week}-d${runbook.day}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-medium">{runbook.title}</h3>
+                  <Badge tone="default">Day {runbook.day}</Badge>
+                </div>
+                <p className="mt-2 text-sm text-muted">
+                  <span className="font-medium text-foreground">Topology:</span>{" "}
+                  {runbook.topology}
+                </p>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <h4 className="text-xs font-medium uppercase tracking-wide text-muted">
+                      Steps
+                    </h4>
+                    <ol className="mt-2 list-inside list-decimal space-y-1.5 text-sm leading-relaxed text-muted">
+                      {runbook.steps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ol>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-medium uppercase tracking-wide text-muted">
+                      Verify
+                    </h4>
+                    <ul className="mt-2 list-inside list-disc space-y-1.5 text-sm leading-relaxed text-muted">
+                      {runbook.verify.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       <LabSetupChecklist />
 

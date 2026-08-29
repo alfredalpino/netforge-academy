@@ -93,8 +93,8 @@ export default function SubnettingDrillPage() {
         title="Subnetting Drills"
         description={`Target: answer in under ${DRILL_TIME_SECONDS} seconds without a calculator.`}
         actions={
-          <Link href="/accountability">
-            <Button variant="secondary">View progress</Button>
+          <Link href="/drills">
+            <Button variant="secondary">All drills</Button>
           </Link>
         }
       />

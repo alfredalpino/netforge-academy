@@ -7,6 +7,7 @@ export interface GateCriterion {
   label: string;
   met: boolean;
   detail: string;
+  cta?: { href: string; label: string };
 }
 
 export interface GateProgress {
@@ -33,14 +34,16 @@ function subnettingReady(progress: ProgressState): GateCriterion {
     drillStats.totalAttempts > 0
       ? Math.round((drillStats.totalCorrect / drillStats.totalAttempts) * 100)
       : 0;
-  const met = drillStats.bestStreak >= 5 || (drillStats.totalAttempts >= 10 && accuracy >= 80);
+  const met =
+    drillStats.bestStreak >= 10 || (drillStats.totalAttempts >= 15 && accuracy >= 80);
   return {
     id: "subnetting",
     label: "Subnetting at speed",
     met,
     detail: met
       ? `Best streak ${drillStats.bestStreak}, ${accuracy}% accuracy`
-      : `Need 5+ streak or 80%+ over 10 attempts (currently ${drillStats.bestStreak} streak, ${accuracy}%)`,
+      : `Target: 20-streak for CCNA mastery. Need 10+ streak or 80%+ over 15 attempts (currently ${drillStats.bestStreak} streak, ${accuracy}%)`,
+    cta: met ? undefined : { href: "/drills/subnetting", label: "Practice subnetting" },
   };
 }
 

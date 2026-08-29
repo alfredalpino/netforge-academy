@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useProgress } from "@/lib/progress";
 import { getGateProgress } from "@/lib/gates";
 import { PHASES } from "@/lib/curriculum";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageShell } from "@/components/ui/PageShell";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -61,6 +63,13 @@ export default function GatesPage() {
                         {c.met ? "✓" : "○"} {c.label}
                       </span>
                       <p className="mt-0.5 text-xs leading-relaxed text-muted">{c.detail}</p>
+                      {!c.met && c.cta && (
+                        <Link href={c.cta.href} className="mt-2 inline-block">
+                          <Button variant="secondary" className="text-xs">
+                            {c.cta.label}
+                          </Button>
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
