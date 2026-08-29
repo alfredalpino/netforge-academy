@@ -2,78 +2,116 @@
 
 import { useCallback, useState } from "react";
 import { SimulationController } from "@/simulation/core/controller";
+import {
+  applyStartupConfig,
+  gradeLab,
+  topologyFromLab,
+  type GradeReport,
+  type LabSpec,
+} from "@/simulation/grading/lab-schema";
 import type {
   CliResult,
+  DeviceType,
   EngineSnapshot,
-  PacketTrace,
-  SimulationEvent,
   TopologySpec,
 } from "@/simulation/core/types";
+import { useSimulatorStore } from "@/features/simulator/store/simulatorStore";
 
 /**
- * P0 bridge: main-thread SimulationController.
- * Worker entry lives at simulation/workers/sim.worker.ts for the next slice.
+ * Reliable P1 bridge: main-thread controller + Zustand mirror.
+ * Worker module (`sim.worker.ts`) stays protocol-compatible for cutover once
+ * Next/Turbopack worker bundling is confirmed in-app; UI already speaks async.
  */
 export function useSimulationEngine() {
   const [sim] = useState(() => new SimulationController());
-  const [events, setEvents] = useState<SimulationEvent[]>([]);
-  const [traces, setTraces] = useState<PacketTrace[]>([]);
-  const [, bump] = useState(0);
+  const applyMirror = useSimulatorStore((s) => s.applyMirror);
 
-  const refresh = useCallback(() => {
-    setEvents(sim.getRecentEvents().slice(-80));
-    setTraces(sim.getTraces().slice(-80));
-    bump((n) => n + 1);
-  }, [sim]);
+  const sync = useCallback(() => {
+    applyMirror(sim.getStateMirror());
+  }, [applyMirror, sim]);
 
   const loadTopology = useCallback(
-    (spec: TopologySpec, seed = 1) => {
+    async (spec: TopologySpec, seed = 1) => {
       sim.loadTopology(spec, seed);
-      refresh();
+      sync();
     },
-    [refresh, sim],
+    [sim, sync],
   );
 
   const executeCommand = useCallback(
-    (deviceId: string, line: string): CliResult => {
+    async (deviceId: string, line: string): Promise<CliResult> => {
       const result = sim.executeCommand(deviceId, line);
-      refresh();
+      sync();
       return result;
     },
-    [refresh, sim],
+    [sim, sync],
   );
 
-  const ping = useCallback(
-    (deviceId: string, dest: string) => {
-      const result = sim.ping(deviceId, dest, 1);
-      refresh();
-      return result;
+  const grade = useCallback(
+    async (lab: LabSpec): Promise<GradeReport> => {
+      const report = gradeLab(lab, sim);
+      sync();
+      return report;
     },
-    [refresh, sim],
+    [sim, sync],
   );
 
-  const snapshot = useCallback((): EngineSnapshot => sim.snapshot(), [sim]);
+  const snapshot = useCallback(async (): Promise<EngineSnapshot> => {
+    return sim.snapshot();
+  }, [sim]);
 
   const restore = useCallback(
-    (s: EngineSnapshot) => {
-      sim.restore(s);
-      refresh();
+    async (snap: EngineSnapshot) => {
+      sim.restore(snap);
+      sync();
     },
-    [refresh, sim],
+    [sim, sync],
+  );
+
+  const addDevice = useCallback(
+    async (deviceType: DeviceType, name?: string) => {
+      const device = sim.addDevice(deviceType, name);
+      sync();
+      return device;
+    },
+    [sim, sync],
+  );
+
+  const addLink = useCallback(
+    async (
+      a: { deviceId: string; interfaceName: string },
+      b: { deviceId: string; interfaceName: string },
+    ) => {
+      const res = sim.addLink(a, b);
+      sync();
+      if ("error" in res) throw new Error(res.error);
+      return res;
+    },
+    [sim, sync],
+  );
+
+  const applyLabStartup = useCallback(
+    (lab: LabSpec) => {
+      applyStartupConfig(sim, lab);
+      sync();
+    },
+    [sim, sync],
   );
 
   const getController = useCallback(() => sim, [sim]);
 
   return {
     ready: true,
+    runtime: "main" as const,
     loadTopology,
     executeCommand,
-    ping,
+    grade,
     snapshot,
     restore,
+    addDevice,
+    addLink,
+    applyLabStartup,
     getController,
-    events,
-    traces,
-    refresh,
+    topologyFromLab,
   };
 }

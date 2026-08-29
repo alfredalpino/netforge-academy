@@ -1,75 +1,122 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import "@xterm/xterm/css/xterm.css";
 
 export type TerminalPaneProps = {
   lines: string[];
   prompt: string;
-  input: string;
-  onInputChange: (value: string) => void;
-  onSubmitLine: (line: string) => void;
   disabled?: boolean;
+  onSubmitLine: (line: string) => void;
+  /** Bump when selection/lab changes to reprint banner */
+  resetKey?: string;
 };
 
 export function TerminalPane({
   lines,
   prompt,
-  input,
-  onInputChange,
-  onSubmitLine,
   disabled = false,
+  onSubmitLine,
+  resetKey = "",
 }: TerminalPaneProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const termRef = useRef<Terminal | null>(null);
+  const fitRef = useRef<FitAddon | null>(null);
+  const bufferRef = useRef("");
+  const linesLenRef = useRef(0);
+  const onSubmitRef = useRef(onSubmitLine);
+  const promptRef = useRef(prompt);
+  const disabledRef = useRef(disabled);
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [lines]);
+    onSubmitRef.current = onSubmitLine;
+    promptRef.current = prompt;
+    disabledRef.current = disabled;
+  }, [disabled, onSubmitLine, prompt]);
+
+  useEffect(() => {
+    if (!hostRef.current) return;
+    const term = new Terminal({
+      cursorBlink: true,
+      fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
+      fontSize: 13,
+      theme: {
+        background: "#02060b",
+        foreground: "#d7e2ef",
+        cursor: "#4aa3ff",
+        selectionBackground: "rgba(74,163,255,0.35)",
+      },
+      convertEol: true,
+    });
+    const fit = new FitAddon();
+    term.loadAddon(fit);
+    term.open(hostRef.current);
+    fit.fit();
+    termRef.current = term;
+    fitRef.current = fit;
+    bufferRef.current = "";
+    linesLenRef.current = 0;
+
+    term.writeln("NetForgeOS terminal — educational Cisco-style CLI (not Cisco IOS).");
+    term.write(`${prompt} `);
+
+    const onData = term.onData((data) => {
+      if (disabledRef.current) return;
+      for (const ch of data) {
+        if (ch === "\r") {
+          const line = bufferRef.current;
+          bufferRef.current = "";
+          term.write("\r\n");
+          onSubmitRef.current(line);
+          return;
+        }
+        if (ch === "\u007f") {
+          if (bufferRef.current.length > 0) {
+            bufferRef.current = bufferRef.current.slice(0, -1);
+            term.write("\b \b");
+          }
+          return;
+        }
+        if (ch >= " " || ch === "\t") {
+          bufferRef.current += ch;
+          term.write(ch);
+        }
+      }
+    });
+
+    const onResize = () => fit.fit();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      onData.dispose();
+      window.removeEventListener("resize", onResize);
+      term.dispose();
+      termRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once; resetKey remounts via key on parent
+  }, [resetKey]);
+
+  useEffect(() => {
+    const term = termRef.current;
+    if (!term) return;
+    while (linesLenRef.current < lines.length) {
+      const line = lines[linesLenRef.current++];
+      // Commands already echoed by local typing; skip exact prompt echoes if needed
+      term.writeln(line);
+    }
+    term.write(`${prompt} `);
+  }, [lines, prompt]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div
-        ref={scrollRef}
-        className="sim-terminal min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap px-3 py-2"
-        aria-live="polite"
-        aria-relevant="additions"
-      >
-        {lines.length === 0 ? (
-          <p className="text-muted">
-            NetForgeOS terminal — select a device, then type commands. Try{" "}
-            <span className="text-accent">enable</span>,{" "}
-            <span className="text-accent">configure terminal</span>,{" "}
-            <span className="text-accent">ping</span>.
-          </p>
-        ) : (
-          lines.map((line, i) => (
-            <div key={`${i}-${line.slice(0, 24)}`}>{line}</div>
-          ))
-        )}
-      </div>
-      <form
-        className="sim-terminal flex items-center gap-2 border-t border-border px-3 py-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (disabled) return;
-          onSubmitLine(input);
-        }}
-      >
-        <label className="sr-only" htmlFor="sim-terminal-input">
-          Terminal command
-        </label>
-        <span className="shrink-0 text-accent">{prompt}</span>
-        <input
-          id="sim-terminal-input"
-          value={input}
-          disabled={disabled}
-          onChange={(e) => onInputChange(e.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted/60"
-          placeholder={disabled ? "Select a device…" : "enter command"}
-        />
-      </form>
+      <div ref={hostRef} className="sim-terminal min-h-0 flex-1 px-2 py-1" />
+      {disabled && (
+        <p className="border-t border-border px-3 py-1 text-[0.7rem] text-muted">
+          Select a device to type commands.
+        </p>
+      )}
     </div>
   );
 }

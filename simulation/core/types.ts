@@ -29,6 +29,13 @@ export interface NetworkInterface {
   duplex: "full" | "half";
   mtu: number;
   ipv4: IPv4Address[];
+  /** L2 switchport config (switches). Hosts/routers omit. */
+  switchport?: {
+    mode: "access" | "trunk";
+    accessVlan: number;
+    nativeVlan: number;
+    allowedVlans: number[];
+  };
   counters: InterfaceCounters;
 }
 
@@ -125,6 +132,7 @@ export interface Packet {
   createdAt: number;
   layers: {
     eth?: EthernetHeader;
+    vlan?: { vlanId: number; ethertype: number };
     arp?: ArpPayload;
     ipv4?: IPv4Header;
     icmp?: IcmpPayload;

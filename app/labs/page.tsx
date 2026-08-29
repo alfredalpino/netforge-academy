@@ -22,11 +22,46 @@ export default function LabsPage() {
         title="Lab Stack"
         description="Tools to install locally — NetForge tracks setup progress; labs run on your machine."
         actions={
-          <Link href="/resources">
-            <Button variant="secondary">Browse resources</Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/simulator?lab=basic-lan">
+              <Button variant="primary">Open Simulator</Button>
+            </Link>
+            <Link href="/resources">
+              <Button variant="secondary">Browse resources</Button>
+            </Link>
+          </div>
         }
       />
+
+      <section className="mb-10">
+        <h2 className="mb-4 text-sm font-medium">Browser labs (zero install)</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card className="flex flex-col">
+            <h3 className="font-medium">Basic LAN Connectivity</h3>
+            <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
+              Address a router and host through a switch, then grade a live ping —
+              runs entirely in your browser.
+            </p>
+            <Link href="/simulator?lab=basic-lan" className="mt-4">
+              <Button size="sm" variant="secondary">
+                Launch lab
+              </Button>
+            </Link>
+          </Card>
+          <Card className="flex flex-col">
+            <h3 className="font-medium">VLAN Segmentation</h3>
+            <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
+              Access VLANs, trunk ports, and isolation — see why same-switch hosts
+              still fail across VLANs.
+            </p>
+            <Link href="/simulator?lab=vlan-segment" className="mt-4">
+              <Button size="sm" variant="secondary">
+                Launch lab
+              </Button>
+            </Link>
+          </Card>
+        </div>
+      </section>
 
       <section className="mb-10">
         <h2 className="mb-4 text-sm font-medium">Required Tools</h2>

@@ -160,6 +160,49 @@ export function executeCliLine(
       if (err) return result(device, session, "", err);
       return result(device, session, "");
     }
+    if (head === "switchport" || head === "sw") {
+      const sub = tokens[1]?.toLowerCase() ?? "";
+      if (sub === "mode") {
+        const mode = tokens[2]?.toLowerCase();
+        if (mode !== "access" && mode !== "trunk") {
+          return result(device, session, "", "Usage: switchport mode {access|trunk}");
+        }
+        const err = sim.setSwitchport(device.id, session.ifaceName, {
+          mode,
+          allowedVlans: mode === "trunk" ? [1, 10, 20, 30] : undefined,
+        });
+        if (err) return result(device, session, "", err);
+        return result(device, session, "");
+      }
+      if (sub === "access" && tokens[2]?.toLowerCase() === "vlan") {
+        const vlan = Number(tokens[3]);
+        if (!vlan) return result(device, session, "", "Usage: switchport access vlan <id>");
+        const err = sim.setSwitchport(device.id, session.ifaceName, {
+          mode: "access",
+          accessVlan: vlan,
+        });
+        if (err) return result(device, session, "", err);
+        return result(device, session, "");
+      }
+      if (sub === "trunk" && tokens[2]?.toLowerCase() === "allowed" && tokens[3]?.toLowerCase() === "vlan") {
+        const list = (tokens[4] ?? "1")
+          .split(",")
+          .map((v) => Number(v.trim()))
+          .filter((n) => n > 0);
+        const err = sim.setSwitchport(device.id, session.ifaceName, {
+          mode: "trunk",
+          allowedVlans: list.length ? list : [1],
+        });
+        if (err) return result(device, session, "", err);
+        return result(device, session, "");
+      }
+      return result(
+        device,
+        session,
+        "",
+        "Usage: switchport mode … | switchport access vlan … | switchport trunk allowed vlan …",
+      );
+    }
   }
 
   return result(device, session, "", `% Invalid input detected at '^' marker: ${line}`);
@@ -198,6 +241,34 @@ function handleShow(
       .map((e) => `${e.mac}  vlan ${e.vlan}  ${e.ifaceId}`)
       .join("\n");
     return result(device, session, rows || "MAC table is empty");
+  }
+
+  if (a0 === "vlan" || (a0 === "vlan" && a1 === "brief") || (a0 === "vlan" && a1.startsWith("br"))) {
+    const vlanMap = new Map<number, string[]>();
+    for (const iface of live.interfaces) {
+      const sp = iface.switchport;
+      if (!sp) continue;
+      if (sp.mode === "access") {
+        const list = vlanMap.get(sp.accessVlan) ?? [];
+        list.push(iface.name);
+        vlanMap.set(sp.accessVlan, list);
+      } else {
+        for (const v of sp.allowedVlans) {
+          const list = vlanMap.get(v) ?? [];
+          list.push(`${iface.name}(t)`);
+          vlanMap.set(v, list);
+        }
+      }
+    }
+    const rows = [...vlanMap.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([v, ifaces]) => `${String(v).padEnd(6)} ${ifaces.join(", ")}`)
+      .join("\n");
+    return result(
+      device,
+      session,
+      rows ? `VLAN   Interfaces\n${rows}` : "No VLAN information",
+    );
   }
 
   if (a0 === "ip" && (a1 === "route" || a1 === "ro")) {

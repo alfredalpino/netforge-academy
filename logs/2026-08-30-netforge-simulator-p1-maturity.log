@@ -1,0 +1,19 @@
+# P1 maturity build log
+Date: 2026-08-30
+
+## Smart reuse (license-safe)
+- Copied BSD-3 containerlab topoviewer icons → public/simulator/icons/{router,switch,host,server}.svg
+- Copied MIT containerlab-app ethernet port icons → port(-up|-down).svg
+- Documented in public/simulator/ATTRIBUTION.md
+- Did NOT copy AGPL netsim, GPL PackeTTrino, or unlicensed broadcast-studio assets/code
+- Conceptual patterns only from MIT cisco-real-sim (Worker message shape / canvas UX)
+
+## Implemented
+- React Flow canvas with harvested device icons + freeform add/link → engine mutations
+- Zustand simulatorStore; xterm terminal; packet hop inspector
+- VLAN access/trunk model + isolation tests; vlan-segment catalog lab
+- Labs page CTAs + /simulator?lab= deep links
+- Worker protocol v1 + sim.worker.ts retained; UI uses async main-thread bridge (same API shape) until Worker bundling is cut over without CSP pain
+- NetForgeOS educational disclaimer in workspace chrome
+- npm deps: @xyflow/react, zustand, @xterm/xterm, @xterm/addon-fit
+- validate green (29 tests)

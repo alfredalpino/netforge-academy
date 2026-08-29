@@ -1,9 +1,10 @@
 # NetForge Network Simulator — Implementation Blueprint
 
-**Status:** P0 implemented; P1 maturity plan locked — see [21-phase-p1-maturity-plan.md](./21-phase-p1-maturity-plan.md)  
+**Status:** P0 shipped; P1 maturity in progress — React Flow + VLAN + icons; Worker protocol ready (UI async main bridge)  
 **Date:** 2026-08-30  
 **Product vision SSoT:** [`NETFORGE NETWORK SIMULATOR.md`](../../NETFORGE%20NETWORK%20SIMULATOR.md)  
 **Existing academy:** preserve and extend; do not replace design language or study OS
+**Asset attribution:** [`public/simulator/ATTRIBUTION.md`](../../public/simulator/ATTRIBUTION.md)
 
 ---
 

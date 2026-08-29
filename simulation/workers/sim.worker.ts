@@ -1,57 +1,66 @@
-/**
- * Dedicated Worker entry (P0 scaffolding).
- * UI currently uses main-thread SimulationController via useSimulationEngine;
- * swap the hook to this worker when bundler/CSP path is verified in-app.
- */
+/// <reference lib="webworker" />
 import { SimulationController } from "../core/controller";
-import type { EngineSnapshot, TopologySpec } from "../core/types";
+import { gradeLab } from "../grading/lab-schema";
+import type { FromWorker, ToWorker } from "./protocol";
+import { WORKER_PROTOCOL_VERSION } from "./protocol";
 
 const sim = new SimulationController();
 
-export type WorkerRequest =
-  | { type: "init"; seed: number }
-  | { type: "load"; topology: TopologySpec; seed?: number }
-  | { type: "cmd"; deviceId: string; line: string; requestId: string }
-  | { type: "ping"; deviceId: string; dest: string; requestId: string }
-  | { type: "snapshot"; requestId: string }
-  | { type: "restore"; snapshot: EngineSnapshot; requestId: string };
+function mirror() {
+  return sim.getStateMirror();
+}
 
-self.onmessage = (ev: MessageEvent<WorkerRequest>) => {
+function reply(msg: FromWorker): void {
+  self.postMessage(msg);
+}
+
+self.onmessage = (ev: MessageEvent<ToWorker>) => {
   const msg = ev.data;
+  if (!msg || msg.v !== WORKER_PROTOCOL_VERSION) {
+    reply({
+      v: 1,
+      type: "error",
+      message: "Unsupported worker protocol version",
+    });
+    return;
+  }
+
   try {
     switch (msg.type) {
       case "init":
         sim.reset(msg.seed);
-        self.postMessage({ type: "ready" });
+        reply({ v: 1, type: "ready", mirror: mirror() });
         break;
       case "load":
         sim.loadTopology(msg.topology, msg.seed ?? 1);
-        self.postMessage({ type: "ready" });
+        reply({ v: 1, type: "ready", mirror: mirror() });
         break;
       case "cmd": {
         const result = sim.executeCommand(msg.deviceId, msg.line);
-        self.postMessage({
+        reply({
+          v: 1,
           type: "cli",
           requestId: msg.requestId,
           result,
-          traces: sim.getTraces(),
-          events: sim.getRecentEvents(),
+          mirror: mirror(),
         });
         break;
       }
       case "ping": {
         const result = sim.ping(msg.deviceId, msg.dest, 1);
-        self.postMessage({
-          type: "events",
+        reply({
+          v: 1,
+          type: "pong",
           requestId: msg.requestId,
-          events: result.events,
-          traces: result.traces,
-          ping: { success: result.success, output: result.output },
+          success: result.success,
+          output: result.output,
+          mirror: mirror(),
         });
         break;
       }
       case "snapshot":
-        self.postMessage({
+        reply({
+          v: 1,
           type: "snapshot",
           requestId: msg.requestId,
           snapshot: sim.snapshot(),
@@ -59,14 +68,88 @@ self.onmessage = (ev: MessageEvent<WorkerRequest>) => {
         break;
       case "restore":
         sim.restore(msg.snapshot);
-        self.postMessage({ type: "ready", requestId: msg.requestId });
+        reply({
+          v: 1,
+          type: "ready",
+          requestId: msg.requestId,
+          mirror: mirror(),
+        });
+        break;
+      case "grade": {
+        // Ensure lab topology already loaded by UI; grade against live state
+        const report = gradeLab(msg.lab, sim);
+        reply({
+          v: 1,
+          type: "grade",
+          requestId: msg.requestId,
+          report,
+          mirror: mirror(),
+        });
+        break;
+      }
+      case "addDevice": {
+        sim.addDevice(msg.deviceType, msg.name);
+        reply({
+          v: 1,
+          type: "state",
+          requestId: msg.requestId,
+          mirror: mirror(),
+        });
+        break;
+      }
+      case "addLink": {
+        const res = sim.addLink(msg.a, msg.b);
+        if ("error" in res) {
+          reply({
+            v: 1,
+            type: "error",
+            requestId: msg.requestId,
+            message: res.error,
+          });
+          break;
+        }
+        reply({
+          v: 1,
+          type: "state",
+          requestId: msg.requestId,
+          mirror: mirror(),
+        });
+        break;
+      }
+      case "removeDevice":
+        sim.removeDevice(msg.deviceId);
+        reply({
+          v: 1,
+          type: "state",
+          requestId: msg.requestId,
+          mirror: mirror(),
+        });
+        break;
+      case "removeLink":
+        sim.removeLink(msg.linkId);
+        reply({
+          v: 1,
+          type: "state",
+          requestId: msg.requestId,
+          mirror: mirror(),
+        });
+        break;
+      case "getState":
+        reply({
+          v: 1,
+          type: "state",
+          requestId: msg.requestId,
+          mirror: mirror(),
+        });
         break;
       default:
-        break;
+        reply({ v: 1, type: "error", message: "Unknown message type" });
     }
   } catch (err) {
-    self.postMessage({
+    reply({
+      v: 1,
       type: "error",
+      requestId: "requestId" in msg ? msg.requestId : undefined,
       message: err instanceof Error ? err.message : String(err),
     });
   }

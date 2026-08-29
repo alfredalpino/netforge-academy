@@ -1,114 +1,179 @@
 "use client";
 
-import type { DeviceType } from "@/simulation/core/types";
+import { useCallback, useEffect, useMemo } from "react";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  useEdgesState,
+  useNodesState,
+  type Connection,
+  type Edge,
+  type OnNodeDrag,
+  BackgroundVariant,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import { DeviceNode, type DeviceFlowNode } from "./DeviceNode";
+import type { DeviceType, NetworkDevice, NetworkLink } from "@/simulation/core/types";
+import type { CanvasPosition } from "@/features/simulator/store/simulatorStore";
 
-export type CanvasNode = {
-  id: string;
-  name: string;
-  type: DeviceType;
-  x: number;
-  y: number;
-  selected?: boolean;
-};
-
-export type CanvasLink = {
-  id: string;
-  aDeviceId: string;
-  bDeviceId: string;
-};
-
-const TYPE_LABEL: Record<string, string> = {
-  router: "RTR",
-  switch: "SW",
-  host: "PC",
-  server: "SRV",
-};
+const nodeTypes = { device: DeviceNode };
 
 export type TopologyCanvasProps = {
-  nodes: CanvasNode[];
-  links: CanvasLink[];
+  devices: NetworkDevice[];
+  links: NetworkLink[];
+  positions: Record<string, CanvasPosition>;
   selectedId: string | null;
+  hopDeviceIds: string[];
   onSelect: (id: string | null) => void;
-  hopDeviceIds?: string[];
+  onPositionsChange: (positions: Record<string, CanvasPosition>) => void;
+  onConnectDevices: (
+    a: { deviceId: string; interfaceName: string },
+    b: { deviceId: string; interfaceName: string },
+  ) => void;
 };
 
+function firstFreeIface(device: NetworkDevice, used: Set<string>): string | null {
+  for (const iface of device.interfaces) {
+    if (!used.has(iface.id)) return iface.name;
+  }
+  return null;
+}
+
 export function TopologyCanvas({
-  nodes,
+  devices,
   links,
+  positions,
   selectedId,
+  hopDeviceIds,
   onSelect,
-  hopDeviceIds = [],
+  onPositionsChange,
+  onConnectDevices,
 }: TopologyCanvasProps) {
-  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const usedIfaces = useMemo(() => {
+    const s = new Set<string>();
+    for (const l of links) {
+      s.add(l.a.interfaceId);
+      s.add(l.b.interfaceId);
+    }
+    return s;
+  }, [links]);
+
+  const builtNodes: DeviceFlowNode[] = useMemo(
+    () =>
+      devices.map((d, i) => ({
+        id: d.id,
+        type: "device" as const,
+        position: positions[d.id] ?? {
+          x: 80 + (i % 4) * 160,
+          y: 80 + Math.floor(i / 4) * 120,
+        },
+        selected: d.id === selectedId,
+        data: {
+          label: d.name,
+          deviceType: d.type as DeviceType,
+          hopping: hopDeviceIds.includes(d.id),
+        },
+      })),
+    [devices, hopDeviceIds, positions, selectedId],
+  );
+
+  const builtEdges: Edge[] = useMemo(
+    () =>
+      links.map((l) => ({
+        id: l.id,
+        source: l.a.deviceId,
+        target: l.b.deviceId,
+        animated:
+          hopDeviceIds.includes(l.a.deviceId) && hopDeviceIds.includes(l.b.deviceId),
+        style: {
+          stroke:
+            hopDeviceIds.includes(l.a.deviceId) && hopDeviceIds.includes(l.b.deviceId)
+              ? "var(--sim-link-up)"
+              : "var(--sim-link)",
+          strokeWidth: 2,
+        },
+      })),
+    [hopDeviceIds, links],
+  );
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<DeviceFlowNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  useEffect(() => {
+    setNodes(builtNodes);
+    setEdges(builtEdges);
+  }, [builtEdges, builtNodes, setEdges, setNodes]);
+
+  const onNodeDragStop: OnNodeDrag = useCallback(
+    (_e, node) => {
+      onPositionsChange({
+        ...positions,
+        [node.id]: { x: node.position.x, y: node.position.y },
+      });
+    },
+    [onPositionsChange, positions],
+  );
+
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
+      const aDev = devices.find((d) => d.id === connection.source);
+      const bDev = devices.find((d) => d.id === connection.target);
+      if (!aDev || !bDev) return;
+      const aName = firstFreeIface(aDev, usedIfaces);
+      const bName = firstFreeIface(bDev, usedIfaces);
+      if (!aName || !bName) return;
+      onConnectDevices(
+        { deviceId: aDev.id, interfaceName: aName },
+        { deviceId: bDev.id, interfaceName: bName },
+      );
+    },
+    [devices, onConnectDevices, usedIfaces],
+  );
 
   return (
-    <div
-      className="sim-canvas-surface relative h-full min-h-[220px] w-full overflow-hidden"
-      onClick={() => onSelect(null)}
-      role="application"
-      aria-label="Topology canvas"
-    >
-      <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
-        {links.map((link) => {
-          const a = nodeMap.get(link.aDeviceId);
-          const b = nodeMap.get(link.bDeviceId);
-          if (!a || !b) return null;
-          const active =
-            hopDeviceIds.includes(a.id) && hopDeviceIds.includes(b.id);
-          return (
-            <line
-              key={link.id}
-              x1={a.x + 44}
-              y1={a.y + 28}
-              x2={b.x + 44}
-              y2={b.y + 28}
-              stroke={active ? "var(--sim-link-up)" : "var(--sim-link)"}
-              strokeWidth={active ? 2.5 : 1.75}
-            />
-          );
-        })}
-      </svg>
-
-      {nodes.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
+    <div className="sim-canvas-surface relative h-full w-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeDragStop={onNodeDragStop}
+        onSelectionChange={({ nodes: sel }) => {
+          onSelect(sel[0]?.id ?? null);
+        }}
+        onPaneClick={() => onSelect(null)}
+        nodeTypes={nodeTypes}
+        fitView
+        proOptions={{ hideAttribution: true }}
+        colorMode="dark"
+      >
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={20}
+          size={1}
+          color="var(--sim-grid)"
+        />
+        <Controls showInteractive={false} />
+        <MiniMap
+          nodeColor={() => "#1c2533"}
+          maskColor="rgba(7,11,18,0.7)"
+          className="!bg-surface"
+        />
+      </ReactFlow>
+      {devices.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
           <p className="font-display text-base font-semibold text-foreground">
             Empty topology
           </p>
           <p className="max-w-sm text-sm text-muted">
-            Load the Basic LAN sample from the top bar, or add devices from the palette.
+            Load Sample, or place devices from the palette and drag links between handles.
           </p>
         </div>
       )}
-
-      {nodes.map((node) => {
-        const selected = selectedId === node.id;
-        const hopping = hopDeviceIds.includes(node.id);
-        return (
-          <button
-            key={node.id}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(node.id);
-            }}
-            className={`absolute flex w-[88px] flex-col items-center rounded-xl border px-2 py-2 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              selected
-                ? "border-accent bg-accent/15 shadow-[0_0_0_1px_var(--accent)]"
-                : hopping
-                  ? "border-success/60 bg-success/10"
-                  : "border-border bg-surface-elevated/90 hover:border-border-strong"
-            }`}
-            style={{ left: node.x, top: node.y }}
-          >
-            <span className="font-mono text-[0.65rem] text-accent">
-              {TYPE_LABEL[node.type] ?? node.type}
-            </span>
-            <span className="truncate text-xs font-semibold text-foreground">
-              {node.name}
-            </span>
-          </button>
-        );
-      })}
     </div>
   );
 }

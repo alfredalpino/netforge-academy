@@ -49,6 +49,138 @@ export class SimulationController {
     this.links = built.links;
   }
 
+  /** Freeform: add a device with default interfaces. */
+  addDevice(
+    type: NetworkDevice["type"],
+    name?: string,
+  ): NetworkDevice {
+    const n = this.devices.size + 1;
+    const id = name?.replace(/\s+/g, "") || `${type}${n}`;
+    if (this.devices.has(id)) {
+      return this.addDevice(type, `${id}-${n}`);
+    }
+    const hostname = name ?? id.toUpperCase();
+    const spec: TopologySpec = {
+      nodes: [{ id, name: hostname, type }],
+      links: [],
+    };
+    const built = buildTopology(spec, this.seed + n);
+    const device = built.devices.get(id)!;
+    this.devices.set(id, device);
+    return structuredClone(device);
+  }
+
+  removeDevice(deviceId: string): void {
+    const toRemove = [...this.links.values()].filter(
+      (l) => l.a.deviceId === deviceId || l.b.deviceId === deviceId,
+    );
+    for (const l of toRemove) this.links.delete(l.id);
+    this.devices.delete(deviceId);
+    this.cliSessions.delete(deviceId);
+  }
+
+  addLink(
+    a: { deviceId: string; interfaceName: string },
+    b: { deviceId: string; interfaceName: string },
+    latencyMs = 1,
+  ): NetworkLink | { error: string } {
+    const aDev = this.devices.get(a.deviceId);
+    const bDev = this.devices.get(b.deviceId);
+    if (!aDev || !bDev) return { error: "Unknown device" };
+    const aIface = findIface(aDev, a.interfaceName);
+    const bIface = findIface(bDev, b.interfaceName);
+    if (!aIface || !bIface) return { error: "Unknown interface" };
+    // Interface already linked?
+    for (const existing of this.links.values()) {
+      if (
+        existing.a.interfaceId === aIface.id ||
+        existing.b.interfaceId === aIface.id ||
+        existing.a.interfaceId === bIface.id ||
+        existing.b.interfaceId === bIface.id
+      ) {
+        return { error: "Interface already connected" };
+      }
+    }
+    const id = `L-${a.deviceId}-${b.deviceId}-${++this.eventSeq}`;
+    const link: NetworkLink = {
+      id,
+      a: { deviceId: aDev.id, interfaceId: aIface.id },
+      b: { deviceId: bDev.id, interfaceId: bIface.id },
+      state: "up",
+      bandwidthMbps: 1000,
+      latencyMs,
+      jitterMs: 0,
+      loss: 0,
+      mtu: 1500,
+    };
+    this.links.set(id, link);
+    aIface.operationalStatus = aIface.adminStatus === "up" ? "up" : "down";
+    bIface.operationalStatus = bIface.adminStatus === "up" ? "up" : "down";
+    return structuredClone(link);
+  }
+
+  removeLink(linkId: string): void {
+    const link = this.links.get(linkId);
+    if (!link) return;
+    this.links.delete(linkId);
+    for (const ep of [link.a, link.b]) {
+      const dev = this.devices.get(ep.deviceId);
+      const iface = dev?.interfaces.find((i) => i.id === ep.interfaceId);
+      if (iface) iface.operationalStatus = "down";
+    }
+  }
+
+  setSwitchport(
+    deviceId: string,
+    ifaceName: string,
+    config: {
+      mode: "access" | "trunk";
+      accessVlan?: number;
+      nativeVlan?: number;
+      allowedVlans?: number[];
+    },
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "switch") return "Switchport only on switches";
+    const iface = findIface(device, ifaceName);
+    if (!iface) return "Interface not found";
+    iface.switchport = {
+      mode: config.mode,
+      accessVlan: config.accessVlan ?? iface.switchport?.accessVlan ?? 1,
+      nativeVlan: config.nativeVlan ?? iface.switchport?.nativeVlan ?? 1,
+      allowedVlans:
+        config.allowedVlans ??
+        iface.switchport?.allowedVlans ??
+        [1],
+    };
+    this.appendConfig(
+      device,
+      config.mode === "access"
+        ? ` switchport mode access`
+        : ` switchport mode trunk`,
+    );
+    if (config.mode === "access" && config.accessVlan !== undefined) {
+      this.appendConfig(device, ` switchport access vlan ${config.accessVlan}`);
+    }
+    return null;
+  }
+
+  /** Engine state mirror for Worker → UI. */
+  getStateMirror(): {
+    devices: NetworkDevice[];
+    links: NetworkLink[];
+    traces: PacketTrace[];
+    events: SimulationEvent[];
+  } {
+    return {
+      devices: this.getDevices(),
+      links: this.getLinks(),
+      traces: this.getTraces(),
+      events: this.getRecentEvents(),
+    };
+  }
+
   reset(seed = this.seed): void {
     this.seed = seed;
     this.t = 0;
@@ -628,10 +760,29 @@ export class SimulationController {
     packet: Packet,
   ): void {
     const eth = packet.layers.eth!;
-    this.noteHop(packet, device.id, `L2 learn ${eth.srcMac} on ${inIface.name}`);
+    const ingressVlan = this.resolveIngressVlan(inIface, packet);
+    if (ingressVlan === null) {
+      packet.meta.dropReason = "VLAN mismatch / not allowed";
+      const tr = this.traces.get(packet.id);
+      if (tr) tr.outcome = "dropped";
+      this.noteHop(packet, device.id, "drop VLAN");
+      return;
+    }
 
-    // Learn
-    const existing = device.runtime.macTable.find((m) => macEqual(m.mac, eth.srcMac));
+    // Strip tag for access egress later; keep tag metadata on packet
+    if (!packet.layers.vlan) {
+      packet.layers.vlan = { vlanId: ingressVlan, ethertype: eth.ethertype };
+    }
+
+    this.noteHop(
+      packet,
+      device.id,
+      `L2 learn ${eth.srcMac} vlan ${ingressVlan} on ${inIface.name}`,
+    );
+
+    const existing = device.runtime.macTable.find(
+      (m) => macEqual(m.mac, eth.srcMac) && m.vlan === ingressVlan,
+    );
     if (existing) {
       existing.ifaceId = inIface.id;
       existing.ageSimTime = this.t;
@@ -639,24 +790,27 @@ export class SimulationController {
       device.runtime.macTable.push({
         mac: eth.srcMac,
         ifaceId: inIface.id,
-        vlan: 1,
+        vlan: ingressVlan,
         ageSimTime: this.t,
       });
     }
 
     const isBcast = isBroadcastMac(eth.dstMac);
-    const known = device.runtime.macTable.find((m) => macEqual(m.mac, eth.dstMac));
+    const known = device.runtime.macTable.find(
+      (m) => macEqual(m.mac, eth.dstMac) && m.vlan === ingressVlan,
+    );
 
     const egressIfaces = device.interfaces.filter((i) => {
       if (i.id === inIface.id) return false;
       if (i.operationalStatus !== "up") return false;
+      if (!this.vlanAllowedOnEgress(i, ingressVlan)) return false;
       if (isBcast || !known) return true;
       return i.id === known.ifaceId;
     });
 
     for (const out of egressIfaces) {
       const clone = clonePacket(packet, this.nextPacketId());
-      // Keep same logical trace parent for flood: attach to original trace hops
+      this.prepareEgressVlan(out, clone, ingressVlan);
       this.traces.set(clone.id, {
         packetId: clone.id,
         protocol: this.traces.get(packet.id)?.protocol ?? "ETH",
@@ -664,14 +818,71 @@ export class SimulationController {
         hops: [...(this.traces.get(packet.id)?.hops ?? [])],
         outcome: "in_flight",
       });
-      this.noteHop(clone, device.id, `flood/forward → ${out.name}`);
+      this.noteHop(clone, device.id, `forward vlan ${ingressVlan} → ${out.name}`);
       this.transmit(device, out, clone);
     }
 
     if (egressIfaces.length === 0) {
-      packet.meta.dropReason = "no switch egress";
+      packet.meta.dropReason = "no switch egress (VLAN?)";
       const tr = this.traces.get(packet.id);
       if (tr) tr.outcome = "dropped";
+    }
+  }
+
+  private resolveIngressVlan(
+    iface: NetworkInterface,
+    packet: Packet,
+  ): number | null {
+    const sp = iface.switchport ?? {
+      mode: "access" as const,
+      accessVlan: 1,
+      nativeVlan: 1,
+      allowedVlans: [1],
+    };
+    if (packet.layers.vlan) {
+      if (sp.mode === "access") {
+        // Tagged on access — drop (educational strict)
+        return null;
+      }
+      if (!sp.allowedVlans.includes(packet.layers.vlan.vlanId)) return null;
+      return packet.layers.vlan.vlanId;
+    }
+    // Untagged
+    if (sp.mode === "access") return sp.accessVlan;
+    return sp.nativeVlan;
+  }
+
+  private vlanAllowedOnEgress(iface: NetworkInterface, vlan: number): boolean {
+    const sp = iface.switchport ?? {
+      mode: "access" as const,
+      accessVlan: 1,
+      nativeVlan: 1,
+      allowedVlans: [1],
+    };
+    if (sp.mode === "access") return sp.accessVlan === vlan;
+    return sp.allowedVlans.includes(vlan);
+  }
+
+  private prepareEgressVlan(
+    outIface: NetworkInterface,
+    packet: Packet,
+    vlan: number,
+  ): void {
+    const sp = outIface.switchport ?? {
+      mode: "access" as const,
+      accessVlan: 1,
+      nativeVlan: 1,
+      allowedVlans: [1],
+    };
+    if (sp.mode === "access") {
+      delete packet.layers.vlan;
+    } else if (vlan === sp.nativeVlan) {
+      delete packet.layers.vlan;
+    } else {
+      packet.layers.vlan = {
+        vlanId: vlan,
+        ethertype: packet.layers.eth?.ethertype ?? 0x0800,
+      };
     }
   }
 

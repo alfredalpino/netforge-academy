@@ -38,7 +38,7 @@ export function buildTopology(spec: TopologySpec, seed = 1): {
       node.interfaces?.map((i) => i.name) ?? defaultIfaceNames(node.type);
     const interfaces: NetworkInterface[] = names.map((name, idx) => {
       const provided = node.interfaces?.[idx]?.mac;
-      return {
+      const base: NetworkInterface = {
         id: `${node.id}:${name}`,
         name,
         type: "ethernet",
@@ -51,6 +51,15 @@ export function buildTopology(spec: TopologySpec, seed = 1): {
         ipv4: [],
         counters: emptyCounters(),
       };
+      if (node.type === "switch") {
+        base.switchport = {
+          mode: "access",
+          accessVlan: 1,
+          nativeVlan: 1,
+          allowedVlans: [1],
+        };
+      }
+      return base;
     });
 
     devices.set(node.id, {
