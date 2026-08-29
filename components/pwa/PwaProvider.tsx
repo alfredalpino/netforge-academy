@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ConnectionBanner } from "@/components/pwa/ConnectionBanner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import {
@@ -35,6 +35,12 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       setSyncing(false);
     }
   }, [setSyncing]);
+
+  const processSyncQueueRef = useRef(processSyncQueue);
+
+  useEffect(() => {
+    processSyncQueueRef.current = processSyncQueue;
+  }, [processSyncQueue]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -81,7 +87,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
 
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type === "SYNC_QUEUE") {
-        void processSyncQueue();
+        void processSyncQueueRef.current();
       }
     };
 
@@ -93,7 +99,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
       navigator.serviceWorker.removeEventListener("message", onMessage);
     };
-  }, [processSyncQueue]);
+  }, []);
 
   useEffect(() => {
     void bootstrapProgressFromIdb(STORAGE_KEY, () => notifyProgressListeners());
@@ -108,9 +114,9 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isOnline) return;
-    void processSyncQueue();
+    void processSyncQueueRef.current();
     void registerBackgroundSync();
-  }, [isOnline, processSyncQueue]);
+  }, [isOnline]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
