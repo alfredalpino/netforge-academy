@@ -18,6 +18,26 @@ export const metadata: Metadata = {
   title: "NetForge — Network Engineering Academy",
   description:
     "Distraction-free 28-week networking curriculum for NOC Analyst and Network Engineer roles. CCNA, Security+, NSE4, AZ-104, AZ-700.",
+  applicationName: "NetForge",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "NetForge",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+  themeColor: "#0c0f14",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

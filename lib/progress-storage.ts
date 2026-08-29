@@ -1,6 +1,8 @@
 import type { ProgressState } from "./types";
 import { DEFAULT_PROGRESS } from "./types";
 import { parseStoredProgress } from "./progress-schema";
+import { mirrorProgressToIdb } from "./pwa/progress-idb";
+import { enqueueSyncItem, registerBackgroundSync } from "./pwa/sync-queue";
 
 export const STORAGE_KEY = "netforge-progress";
 
@@ -42,20 +44,34 @@ export function getProgressServerSnapshot(): ProgressState {
 
 export type PersistResult = { ok: true } | { ok: false; reason: "quota" | "unknown" };
 
+function queueProgressWrite(serialized: string) {
+  void enqueueSyncItem({ type: "progress-write", payload: serialized })
+    .then(() => registerBackgroundSync())
+    .catch(() => undefined);
+}
+
 export function persistProgressState(next: ProgressState): PersistResult {
   if (typeof window === "undefined") return { ok: true };
 
+  const serialized = JSON.stringify(next);
+
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(STORAGE_KEY, serialized);
     notifyProgressListeners();
+    void mirrorProgressToIdb(serialized);
     return { ok: true };
   } catch (error) {
+    void mirrorProgressToIdb(serialized).catch(() => queueProgressWrite(serialized));
+
     if (
       error instanceof DOMException &&
       (error.name === "QuotaExceededError" || error.code === 22)
     ) {
+      queueProgressWrite(serialized);
       return { ok: false, reason: "quota" };
     }
+
+    queueProgressWrite(serialized);
     return { ok: false, reason: "unknown" };
   }
 }

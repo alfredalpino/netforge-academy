@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c0f14" />
+    <title>NetForge — Offline</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --background: #0c0f14;
+        --foreground: #e8eaed;
+        --muted: #8b95a8;
+        --accent: #3b82f6;
+        --surface: #141820;
+        --border: #252d3d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        padding-top: max(1.5rem, env(safe-area-inset-top));
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+        font-family: system-ui, -apple-system, sans-serif;
+        background: var(--background);
+        color: var(--foreground);
+      }
+      main {
+        max-width: 28rem;
+        width: 100%;
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: var(--surface);
+        padding: 2rem 1.5rem;
+      }
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.25rem;
+      }
+      p {
+        margin: 0 0 1.25rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      button,
+      a {
+        display: inline-block;
+        border: none;
+        border-radius: 0.625rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      button {
+        background: var(--accent);
+        color: white;
+      }
+      a {
+        margin-left: 0.5rem;
+        background: transparent;
+        color: var(--foreground);
+        border: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>You&apos;re offline</h1>
+      <p>
+        NetForge can still open pages you&apos;ve visited recently. Reconnect to sync
+        progress and load new content.
+      </p>
+      <button type="button" onclick="window.location.reload()">Try again</button>
+      <a href="/">Go home</a>
+    </main>
+  </body>
+</html>
