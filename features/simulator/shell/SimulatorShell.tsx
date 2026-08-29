@@ -255,7 +255,7 @@ export function SimulatorShell() {
             prompt={termPrompt}
             onSubmitLine={(line) => void onSubmitLine(line)}
             disabled={!store.selectedId}
-            resetKey={`${store.labId}-${store.selectedId ?? "none"}`}
+            resetKey={store.labId ?? "none"}
           />
         )}
         {store.dockTab === "packets" && (

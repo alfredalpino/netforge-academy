@@ -67,9 +67,12 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
   termPromptByDevice: {},
   connectFrom: null,
   setLabMeta: (labId, labTitle) => set({ labId, labTitle }),
-  setStatus: (status) => set({ status }),
-  setSelectedId: (selectedId) => set({ selectedId }),
-  setDockTab: (dockTab) => set({ dockTab }),
+  setSelectedId: (selectedId) =>
+    set((s) => (s.selectedId === selectedId ? s : { selectedId })),
+  setDockTab: (dockTab) =>
+    set((s) => (s.dockTab === dockTab ? s : { dockTab })),
+  setStatus: (status) =>
+    set((s) => (s.status === status ? s : { status })),
   setPositions: (positions) => set({ positions }),
   patchPosition: (id, pos) =>
     set((s) => ({ positions: { ...s.positions, [id]: pos } })),

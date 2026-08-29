@@ -1,15 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
-  useEdgesState,
-  useNodesState,
   type Connection,
   type Edge,
+  type Node,
   type OnNodeDrag,
   BackgroundVariant,
 } from "@xyflow/react";
@@ -60,7 +59,7 @@ export function TopologyCanvas({
     return s;
   }, [links]);
 
-  const builtNodes: DeviceFlowNode[] = useMemo(
+  const nodes: DeviceFlowNode[] = useMemo(
     () =>
       devices.map((d, i) => ({
         id: d.id,
@@ -79,7 +78,7 @@ export function TopologyCanvas({
     [devices, hopDeviceIds, positions, selectedId],
   );
 
-  const builtEdges: Edge[] = useMemo(
+  const edges: Edge[] = useMemo(
     () =>
       links.map((l) => ({
         id: l.id,
@@ -97,14 +96,6 @@ export function TopologyCanvas({
       })),
     [hopDeviceIds, links],
   );
-
-  const [nodes, setNodes, onNodesChange] = useNodesState<DeviceFlowNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-
-  useEffect(() => {
-    setNodes(builtNodes);
-    setEdges(builtEdges);
-  }, [builtEdges, builtNodes, setEdges, setNodes]);
 
   const onNodeDragStop: OnNodeDrag = useCallback(
     (_e, node) => {
@@ -134,22 +125,20 @@ export function TopologyCanvas({
   );
 
   return (
-    <div className="sim-canvas-surface relative h-full w-full">
+    <div className="sim-canvas-surface relative h-full min-h-[240px] w-full">
       <ReactFlow
-        nodes={nodes}
+        nodes={nodes as Node[]}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
+        onNodeClick={(_e, node) => onSelect(node.id)}
+        onPaneClick={() => onSelect(null)}
         onConnect={onConnect}
         onNodeDragStop={onNodeDragStop}
-        onSelectionChange={({ nodes: sel }) => {
-          onSelect(sel[0]?.id ?? null);
-        }}
-        onPaneClick={() => onSelect(null)}
         nodeTypes={nodeTypes}
         fitView
-        proOptions={{ hideAttribution: true }}
         colorMode="dark"
+        nodesDraggable
+        elementsSelectable={false}
+        nodesConnectable
       >
         <Background
           variant={BackgroundVariant.Dots}
