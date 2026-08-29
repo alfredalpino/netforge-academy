@@ -18,7 +18,7 @@ import { useConnectionState } from "@/lib/pwa/use-connection-state";
 import { STORAGE_KEY, notifyProgressListeners } from "@/lib/progress-storage";
 
 export function PwaProvider({ children }: { children: React.ReactNode }) {
-  const { state, isOnline, setSyncing } = useConnectionState();
+  const { state, isOnline, setSyncing, confirmOnlineStatus } = useConnectionState();
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
   const [showUpdate, setShowUpdate] = useState(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
@@ -132,7 +132,12 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       {showUpdate && (
         <UpdateBanner onUpdate={applyUpdate} onDismiss={() => setShowUpdate(false)} />
       )}
-      <ConnectionBanner state={state} />
+      <ConnectionBanner
+        state={state}
+        onRetry={() => {
+          void confirmOnlineStatus();
+        }}
+      />
       <InstallPrompt />
       {diagnosticsOpen && (
         <OfflineDiagnosticsPanel
