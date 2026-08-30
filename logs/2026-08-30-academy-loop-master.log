@@ -699,3 +699,15 @@ After [Weeks 25-28 daily plans](dac8c43a-fe5f-4be6-9155-b7e06de1e782) subagent c
 | `npm run test:e2e` | ✅ 27 passed |
 
 **Verdict:** Core browser academy production-ready. Optional: extend lab runbooks beyond weeks 5–6.
+
+## Master Loop Tick 28 — Round 27 YouTube embed fix (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| YouTube CSP fix | ✅ `frame-src` + `img-src` for youtube-nocookie / ytimg |
+| YouTubeEmbed polish | ✅ client component, thumbnail poster, onLoad fade |
+| Unit + E2E coverage | ✅ `lib/youtube-embed.test.ts` + smoke iframe src check |
+| `npm run validate` + E2E | ✅ green (14 smoke passed) |
+| Git push | ✅ `fc6cfba` on `main` |
+
+**Verdict:** Topic video embeds fixed and shipped. Academy goal remains complete; loop idle.
