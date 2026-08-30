@@ -5,7 +5,7 @@
 ```text
 Study
   Dashboard (/)
-  Focus Mode (/focus)
+  Today (/today)
   Today (/today)
   Accountability (/accountability)
 

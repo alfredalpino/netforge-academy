@@ -1,0 +1,13 @@
+# Academy UX Phase 2 — Study Start + Drill Upgrade (2026-08-30)
+
+## Delivered
+- Shared DrillTimer (idle/running/paused/expired) — Start / Pause / Resume / Reset; no auto-start
+- Worked examples + Video links on subnetting and VLSM drills
+- Home simplified: "Start studying" primary CTA; pedagogy moved off home
+- Today declutter: "Today's emphasis", Mark complete buttons, schedule behind details
+- Drills hub / Topics / Labs / Gates / Recall light CTA polish
+- Docs: Focus Mode references scrubbed from NEXT-PHASE-PLAN + key simulator docs
+
+## Validation
+- npm run validate
+- npm run test:e2e (smoke + subnetting drill coverage)

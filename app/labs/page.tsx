@@ -55,14 +55,14 @@ export default function LabsPage() {
       <PageHeader
         eyebrow="Lab Environment"
         title="Lab Stack"
-        description="Tools to install locally — NetForge tracks setup progress; labs run on your machine."
+        description="Browser labs grade in NetForge — install local tools when you need Packet Tracer or Wireshark."
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/simulator?lab=basic-lan">
               <Button variant="primary">Open Simulator</Button>
             </Link>
-            <Link href="/resources">
-              <Button variant="secondary">Browse resources</Button>
+            <Link href="/today">
+              <Button variant="secondary">Continue today</Button>
             </Link>
           </div>
         }

@@ -13,4 +13,9 @@ describe("youtube embed helpers", () => {
       "https://i.ytimg.com/vi/H8W9oMNSuwo/hqdefault.jpg",
     );
   });
+
+  it("appends playlist id when provided", () => {
+    const url = youtubeEmbedUrl("H8W9oMNSuwo", "PLw6kwOJVj3MbMZ8B72ZgUryj8OSETC0ds");
+    expect(url).toContain("list=PLw6kwOJVj3MbMZ8B72ZgUryj8OSETC0ds");
+  });
 });

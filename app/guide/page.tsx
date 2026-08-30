@@ -27,7 +27,7 @@ const SECTIONS = [
     items: [
       {
         q: "When to use Topic Videos?",
-        a: "Before theory blocks — open Topic Videos (sidebar or Dashboard Watch section). Each page is one concept with a single embedded lecture. Curriculum module topics link directly when a match exists.",
+        a: "Before theory blocks — open Topic Videos. Each concept page has one lecture; Full courses play entire playlists (CCNA practical, Security+, Bash). Curriculum topics link when a match exists.",
       },
       {
         q: "How do simulator labs fit?",
@@ -64,7 +64,7 @@ const SECTIONS = [
     items: [
       { q: "Dashboard", a: "Home. Position, journey, progress, quick actions." },
       { q: "Today", a: "Full daily plan — theory, config, lab, break/fix, recall. Reinforce strip links topic videos + simulator labs for your module." },
-      { q: "Topic Videos", a: "Curated single-concept lectures (Jeremy's IT Lab CCNA). Browse by phase or follow links from curriculum topics." },
+      { q: "Topic Videos", a: "Single-concept Jeremy's IT Lab lectures plus full courses (David Bombal CCNA, Professor Messer Security+, Bash scripting, Linux). Browse by phase or open Full courses." },
       { q: "Simulator", a: "In-browser graded labs — topology canvas, CLI terminal, packet capture. Launch from Dashboard, Today, or Lab Stack." },
       { q: "Subnet Drills", a: "Timed practice. Target: under 30 seconds per question." },
       { q: "Cert Gates", a: "Live readiness tracking for CCNA → Security+ → NSE4 → AZ-104 → AZ-700." },

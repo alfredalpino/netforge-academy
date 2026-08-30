@@ -24,28 +24,26 @@ export function PanelLeftIcon({ className = "h-[18px] w-[18px]" }: { className?:
 export type SidebarToggleProps = {
   collapsed: boolean;
   onToggle: () => void;
-  /** Show hover tooltip pill (ChatGPT-style). Default true. */
+  /** Show hover tooltip. Default true. */
   showTooltip?: boolean;
-  /** Prefer left when the control sits near the right edge of the sidebar. */
-  tooltipSide?: "left" | "right";
   className?: string;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "children" | "type">;
 
 /**
- * Compact sidebar collapse/expand control matching ChatGPT web UI.
+ * Compact sidebar collapse/expand control.
+ * Tooltip sits below the icon so it never straddles the sidebar/content seam.
  */
 export function SidebarToggle({
   collapsed,
   onToggle,
   showTooltip = true,
-  tooltipSide = "right",
   className = "",
   ...rest
 }: SidebarToggleProps) {
   const label = collapsed ? "Open sidebar" : "Close sidebar";
 
   return (
-    <div className="group/sidebar-toggle relative inline-flex">
+    <div className="group/sidebar-toggle relative inline-flex overflow-visible">
       <button
         type="button"
         onClick={onToggle}
@@ -59,9 +57,7 @@ export function SidebarToggle({
       {showTooltip && (
         <span
           role="tooltip"
-          className={`pointer-events-none absolute top-1/2 z-[60] -translate-y-1/2 whitespace-nowrap rounded-full bg-surface-elevated px-2.5 py-1 text-xs font-medium text-foreground opacity-0 shadow-lg ring-1 ring-border transition-opacity duration-150 group-hover/sidebar-toggle:opacity-100 group-focus-within/sidebar-toggle:opacity-100 ${
-            tooltipSide === "left" ? "right-full mr-2" : "left-full ml-2"
-          }`}
+          className="pointer-events-none invisible absolute left-1/2 top-[calc(100%+6px)] z-[60] w-max -translate-x-1/2 rounded-md bg-surface-elevated px-2 py-1 text-[11px] font-medium text-foreground opacity-0 shadow-lg ring-1 ring-border transition-[opacity,visibility] delay-200 duration-150 group-hover/sidebar-toggle:visible group-hover/sidebar-toggle:opacity-100"
         >
           {label}
         </span>

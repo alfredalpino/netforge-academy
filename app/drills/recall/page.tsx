@@ -45,16 +45,33 @@ export default function RecallDrillPage() {
         title="Recall Flashcards"
         description="Review recall prompts from your daily curriculum — no scoring, just spaced repetition."
         actions={
-          <Link href="/drills">
-            <Button variant="secondary">All drills</Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/today">
+              <Button variant="secondary">Today&apos;s plan</Button>
+            </Link>
+            <Link href="/drills">
+              <Button variant="ghost">All drills</Button>
+            </Link>
+          </div>
         }
       />
 
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap gap-2">
         <Badge>
           Card {index + 1} of {cards.length}
         </Badge>
+        <Link
+          href="/topics"
+          className="rounded-lg border border-border px-2.5 py-1 text-xs text-accent hover:bg-accent/5"
+        >
+          Related · Topic videos
+        </Link>
+        <Link
+          href="/curriculum"
+          className="rounded-lg border border-border px-2.5 py-1 text-xs text-accent hover:bg-accent/5"
+        >
+          Curriculum
+        </Link>
       </div>
 
       <Card className="mx-auto max-w-lg text-center">

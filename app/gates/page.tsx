@@ -25,11 +25,18 @@ export default function GatesPage() {
       <PageHeader
         eyebrow="Certification Path"
         title="Certification Gates"
-        description="Pass competency gates before exam prep — readiness is tracked from modules, drills, and lab setup."
+        description="Pass competency gates before exam prep — readiness is tracked from modules, drills, and labs."
         actions={
-          <Badge tone={readyCount > 0 ? "success" : "default"}>
-            {readyCount}/{gateProgress.length} ready
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={readyCount > 0 ? "success" : "default"}>
+              {readyCount}/{gateProgress.length} ready
+            </Badge>
+            <Link href="/today">
+              <Button variant="secondary" size="sm">
+                Continue today
+              </Button>
+            </Link>
+          </div>
         }
       />
 

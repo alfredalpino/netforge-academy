@@ -5,6 +5,7 @@ import {
   getRelatedTopics,
   getTopicBySlug,
 } from "@/lib/topic-videos";
+import { getCoursePlaylistsForModule } from "@/lib/playlists";
 import { getModule } from "@/lib/curriculum";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 import { PageShell } from "@/components/ui/PageShell";
@@ -26,6 +27,10 @@ export default async function TopicPage({
   if (!topic) notFound();
 
   const related = getRelatedTopics(topic.relatedSlugs);
+  const relatedCourses = topic.moduleIds.flatMap((id) => getCoursePlaylistsForModule(id));
+  const uniqueCourses = relatedCourses.filter(
+    (c, i, arr) => arr.findIndex((x) => x.slug === c.slug) === i,
+  );
   const primaryModule = topic.moduleIds[0] ? getModule(topic.moduleIds[0]) : undefined;
   const youtubeUrl = `https://www.youtube.com/watch?v=${topic.youtubeId}`;
 
@@ -94,6 +99,27 @@ export default async function TopicPage({
                   {r.title}
                 </Link>
                 <span className="ml-2 text-xs text-muted">— {r.channel}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {uniqueCourses.length > 0 && (
+        <Card className="mt-6 border-border/60 bg-surface/50">
+          <h2 className="text-sm font-medium">Full courses for this module</h2>
+          <ul className="mt-4 space-y-2">
+            {uniqueCourses.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/topics/courses/${c.slug}`}
+                  className="text-sm text-accent hover:underline"
+                >
+                  {c.title}
+                </Link>
+                <span className="ml-2 text-xs text-muted">
+                  — {c.channel} · {c.videos.length} videos
+                </span>
               </li>
             ))}
           </ul>

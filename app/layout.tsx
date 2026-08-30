@@ -56,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <Script id="theme-init" strategy="beforeInteractive">
-          {`(function(){try{var t=localStorage.getItem("netforge-theme");if(t==="light"){document.documentElement.dataset.theme="light";document.documentElement.style.colorScheme="light";}}catch(e){}})();`}
+          {`(function(){try{var t=localStorage.getItem("netforge-theme");if(t==="light"){document.documentElement.dataset.theme="light";document.documentElement.style.colorScheme="light";}else{document.documentElement.style.colorScheme="dark";}}catch(e){}})();`}
         </Script>
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">

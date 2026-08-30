@@ -114,8 +114,8 @@ Goal: Optional sync and deployment hardening. Only if you want multi-device or s
 - [ ] Push + verify Vercel deploy
 
 ### Block 4 (optional) — UX
-- [ ] Keyboard shortcuts in focus mode
-- [ ] Weekly review section on accountability page
+- [x] Keyboard shortcuts on Today page
+- [x] Weekly review section on accountability page
 
 ---
 

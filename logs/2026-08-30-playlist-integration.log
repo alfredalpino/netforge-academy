@@ -1,0 +1,10 @@
+# Playlist integration (2026-08-30)
+
+Integrated YouTube playlists as in-app Full courses under Topic Videos:
+
+- David Bombal CCNA practical — 37 videos
+- Professor Messer Security+ SY0-701 — 121 videos
+- Complete Bash Scripting (ysap.sh) — 62 videos
+- Linux: Boot.dev single lecture as topic `linux-fundamentals`
+
+Routes: `/topics/courses/[slug]`

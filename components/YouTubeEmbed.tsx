@@ -6,11 +6,12 @@ import { youtubeEmbedUrl, youtubeThumbnailUrl } from "@/lib/youtube-embed";
 interface YouTubeEmbedProps {
   videoId: string;
   title: string;
+  playlistId?: string;
   className?: string;
 }
 
-export function YouTubeEmbed({ videoId, title, className = "" }: YouTubeEmbedProps) {
-  const src = youtubeEmbedUrl(videoId);
+export function YouTubeEmbed({ videoId, title, playlistId, className = "" }: YouTubeEmbedProps) {
+  const src = youtubeEmbedUrl(videoId, playlistId);
   const [loaded, setLoaded] = useState(false);
 
   return (
@@ -28,6 +29,7 @@ export function YouTubeEmbed({ videoId, title, className = "" }: YouTubeEmbedPro
           />
         )}
         <iframe
+          key={src}
           src={src}
           title={title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

@@ -14,9 +14,10 @@ const DRILLS = [
     href: "/drills/subnetting",
     title: "Subnetting",
     description:
-      "Calculate network, broadcast, host range, and usable hosts from a given IP/prefix — under timed pressure.",
+      "Calculate network, broadcast, host range, and usable hosts — timed practice with worked examples and lecture links.",
     tag: "Core skill",
     metric: "Speed + accuracy",
+    features: ["Timer", "Examples", "Video"],
   },
   {
     href: "/drills/vlsm",
@@ -25,6 +26,7 @@ const DRILLS = [
       "Allocate subnets to departments with varying host requirements from a single base network.",
     tag: "Phase 2",
     metric: "Design judgment",
+    features: ["Timer", "Examples", "Video"],
   },
   {
     href: "/drills/recall",
@@ -33,6 +35,7 @@ const DRILLS = [
       "Active recall prompts drawn from your daily curriculum plans — close the forgetting curve.",
     tag: "Retention",
     metric: "Long-term memory",
+    features: ["Curriculum links"],
   },
 ] as const;
 
@@ -52,11 +55,16 @@ export default function DrillsPage() {
       <PageHeader
         eyebrow="Practice Lab"
         title="Drills"
-        description="Build exam-grade subnetting speed and VLSM design fluency tracked toward certification gates."
+        description="Build exam-grade speed with start/pause timers, worked examples, and topic videos when you need a refresher."
         actions={
-          <Link href="/gates">
-            <Button variant="secondary">View gates</Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/today">
+              <Button variant="secondary">Continue today</Button>
+            </Link>
+            <Link href="/gates">
+              <Button variant="ghost">View gates</Button>
+            </Link>
+          </div>
         }
       />
 
@@ -67,6 +75,9 @@ export default function DrillsPage() {
             <h2 className="mt-2 font-display text-xl font-semibold tracking-tight">
               Your drill stats
             </h2>
+            <p className="mt-2 max-w-xl text-sm text-muted">
+              Open a drill, review an example if needed, press Start when ready, then Check Answer.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge>
@@ -99,6 +110,11 @@ export default function DrillsPage() {
                 {drill.metric}
               </p>
               <p className="mt-4 text-sm leading-relaxed text-muted">{drill.description}</p>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {drill.features.map((f) => (
+                  <Badge key={f}>{f}</Badge>
+                ))}
+              </div>
               <p className="mt-6 text-sm font-medium text-accent transition group-hover:translate-x-0.5">
                 Enter drill →
               </p>

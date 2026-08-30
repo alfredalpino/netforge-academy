@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   generateSubnetQuestion,
@@ -8,8 +8,10 @@ import {
   isFullyCorrect,
   type SubnetAnswer,
 } from "@/lib/subnetting";
+import { SUBNET_EXAMPLES, SUBNET_VIDEO_LINKS } from "@/lib/drill-examples";
 import { useProgress } from "@/lib/progress";
 import { useToast } from "@/components/ui/Toast";
+import { useDrillTimer } from "@/hooks/useDrillTimer";
 import { PageShell } from "@/components/ui/PageShell";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageSkeleton } from "@/components/ui/Skeleton";
@@ -17,6 +19,8 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { DrillTimer } from "@/components/drills/DrillTimer";
+import { DrillLearnPanel } from "@/components/drills/DrillLearnPanel";
 
 const DRILL_TIME_SECONDS = 30;
 
@@ -28,41 +32,32 @@ export default function SubnettingDrillPage() {
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [streak, setStreak] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(DRILL_TIME_SECONDS);
-  const [elapsed, setElapsed] = useState(0);
-  const startedAt = useRef<number | null>(null);
+  const submittedRef = useRef(false);
 
-  useEffect(() => {
-    if (submitted) return;
-    if (startedAt.current === null) startedAt.current = Date.now();
+  const handleExpire = useCallback(() => {
+    if (submittedRef.current) return;
+    showToast("Time's up — check your answer", "warning");
+  }, [showToast]);
 
-    const timer = window.setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          window.clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-      if (startedAt.current) {
-        setElapsed(Math.round((Date.now() - startedAt.current) / 1000));
-      }
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, [question, submitted]);
+  const timer = useDrillTimer({
+    durationSeconds: DRILL_TIME_SECONDS,
+    onExpire: handleExpire,
+  });
+  const { reset: resetTimer } = timer;
 
   const nextQuestion = useCallback(() => {
     setQuestion(generateSubnetQuestion());
     setAnswers({});
     setSubmitted(false);
-    setSecondsLeft(DRILL_TIME_SECONDS);
-    setElapsed(0);
-    startedAt.current = Date.now();
-  }, []);
+    submittedRef.current = false;
+    resetTimer();
+  }, [resetTimer]);
 
   const handleSubmit = () => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
     setSubmitted(true);
+    const elapsed = timer.elapsed > 0 ? timer.elapsed : DRILL_TIME_SECONDS - timer.secondsLeft;
     const allCorrect = isFullyCorrect(answers, question.answer);
     const newStreak = allCorrect ? streak + 1 : 0;
     setScore((s) => ({
@@ -70,7 +65,7 @@ export default function SubnettingDrillPage() {
       total: s.total + 1,
     }));
     setStreak(newStreak);
-    recordDrillResult(allCorrect, newStreak, elapsed);
+    recordDrillResult(allCorrect, newStreak, Math.max(elapsed, 0));
     showToast(allCorrect ? "Correct!" : "Review the answers below", allCorrect ? "success" : "warning");
   };
 
@@ -87,7 +82,7 @@ export default function SubnettingDrillPage() {
   if (!loaded) return <PageSkeleton />;
 
   return (
-    <PageShell narrow>
+    <PageShell narrow testId="subnetting-drill-page">
       <PageHeader
         eyebrow="Drills"
         title="Subnetting Drills"
@@ -99,10 +94,23 @@ export default function SubnettingDrillPage() {
         }
       />
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        <Badge tone={secondsLeft <= 10 && !submitted ? "warning" : "default"}>
-          Timer: {submitted ? `${elapsed}s` : `${secondsLeft}s`}
-        </Badge>
+      <DrillLearnPanel
+        kind="subnet"
+        examples={SUBNET_EXAMPLES}
+        videoLinks={SUBNET_VIDEO_LINKS}
+      />
+
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <DrillTimer
+          status={timer.status}
+          secondsLeft={timer.secondsLeft}
+          elapsed={timer.elapsed}
+          submitted={submitted}
+          onStart={timer.start}
+          onPause={timer.pause}
+          onResume={timer.resume}
+          onReset={timer.reset}
+        />
         <Badge>
           Session: {score.correct}/{score.total}
         </Badge>

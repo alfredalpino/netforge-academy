@@ -9,8 +9,9 @@ test.describe("Academy smoke", () => {
     await page.goto("/");
     await expect(main(page).getByTestId("dashboard")).toBeVisible();
     await expect(
-      main(page).getByRole("heading", { name: /Train like an elite network engineer/i }),
+      main(page).getByRole("heading", { name: /Ready to study/i }),
     ).toBeVisible();
+    await expect(main(page).getByRole("link", { name: /Start studying/i })).toBeVisible();
   });
 
   test("today page shows daily plan", async ({ page }) => {
@@ -32,7 +33,19 @@ test.describe("Academy smoke", () => {
   test("topics index lists curated lectures", async ({ page }) => {
     await page.goto("/topics");
     await expect(main(page).getByRole("heading", { name: "Topic Videos" })).toBeVisible();
-    await expect(main(page).getByText(/51 single-concept explanation videos/)).toBeVisible();
+    await expect(main(page).getByText(/single-concept lectures plus/)).toBeVisible();
+    await expect(main(page).getByTestId("full-courses")).toBeVisible();
+    await expect(main(page).getByRole("link", { name: /Free CCNA 200-301 Practical Course/ })).toBeVisible();
+  });
+
+  test("course playlist page embeds first video", async ({ page }) => {
+    await page.goto("/topics/courses/ccna-bombal");
+    await expect(main(page).getByTestId("course-page")).toBeVisible();
+    await expect(main(page).getByRole("heading", { name: /Free CCNA 200-301 Practical Course/ })).toBeVisible();
+    const iframe = page.locator('[data-testid="youtube-embed"] iframe');
+    await expect(iframe).toBeVisible();
+    await expect(iframe).toHaveAttribute("src", /list=PLw6kwOJVj3MbMZ8B72ZgUryj8OSETC0ds/);
+    await expect(main(page).getByTestId("course-episode-list")).toBeVisible();
   });
 
   test("topic page embeds YouTube video", async ({ page }) => {
@@ -129,6 +142,19 @@ test.describe("Academy smoke", () => {
     await expect(main(page).getByTestId("vlsm-drill-page")).toBeVisible();
     await expect(main(page).getByRole("heading", { name: "VLSM Design" })).toBeVisible();
     await expect(main(page).getByRole("button", { name: "Check Answer" })).toBeVisible();
+    await expect(main(page).getByTestId("drill-timer-start")).toBeVisible();
+  });
+
+  test("subnetting drill has timer controls examples and video", async ({ page }) => {
+    await page.goto("/drills/subnetting");
+    await expect(main(page).getByTestId("subnetting-drill-page")).toBeVisible();
+    await expect(main(page).getByTestId("drill-timer")).toHaveAttribute("data-status", "idle");
+    await expect(main(page).getByTestId("drill-timer-start")).toBeVisible();
+    await expect(main(page).getByTestId("drill-examples-toggle")).toBeVisible();
+    await expect(main(page).getByRole("link", { name: /Subnetting lecture/i })).toBeVisible();
+    await main(page).getByTestId("drill-examples-toggle").click();
+    await expect(main(page).getByTestId("drill-examples-content")).toBeVisible();
+    await expect(main(page).getByText("Classic /24")).toBeVisible();
   });
 
   test("recall drill page loads flashcards", async ({ page }) => {

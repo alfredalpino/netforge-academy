@@ -644,6 +644,7 @@ export const TOPIC_VIDEOS: TopicVideo[] = [
     moduleIds: ["m0-foundation", "m4-tcpip"],
     phaseIds: ["phase-0", "phase-1"],
     aliases: ["ssh", "ssh & virtual machines"],
+    relatedSlugs: ["linux-fundamentals"],
     tags: ["services", "security"],
   },
   {
@@ -787,6 +788,25 @@ export const TOPIC_VIDEOS: TopicVideo[] = [
     aliases: ["cdp", "lldp", "cdp/lldp", "layer 2 discovery", "discovery protocols"],
     relatedSlugs: ["snmp", "syslog"],
     tags: ["services", "layer-2"],
+  },
+  {
+    slug: "linux-fundamentals",
+    title: "Linux Fundamentals",
+    summary:
+      "Shells, terminals, and Unix-like basics — navigate files, install packages, and get comfortable on the command line before CCNA labs.",
+    youtubeId: "v392lEyM29A",
+    videoTitle: "Learn Linux — The Full Course",
+    channel: "Boot.dev",
+    channelUrl: "https://www.youtube.com/@bootdotdev",
+    moduleIds: ["m0-foundation"],
+    phaseIds: ["phase-0"],
+    aliases: [
+      "linux fundamentals",
+      "linux",
+      "cli navigation",
+      "basic bash, powershell, python",
+    ],
+    tags: ["linux", "fundamentals"],
   },
 ];
 

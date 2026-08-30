@@ -34,7 +34,7 @@ ProgressProvider → ToastProvider → ConfirmProvider → PwaProvider → TourP
 | Route | File | Purpose |
 |-------|------|---------|
 | `/` | `app/page.tsx` | Dashboard |
-| `/focus` | `app/focus/page.tsx` | Pomodoro + study material |
+| `/today` | `app/today/page.tsx` | Daily study plan (legacy `/focus` redirects here) |
 | `/today` | `app/today/page.tsx` | Daily plan |
 | `/accountability` | `app/accountability/page.tsx` | Streaks, export/import |
 | `/drills` | `app/drills/page.tsx` | Drill hub |
@@ -67,7 +67,7 @@ Tokens in `app/globals.css` `:root`:
 | `--muted` | `#8b97ab` |
 | `--focus-bg` | `#05080d` |
 
-Patterns: dark navy + cyan accent, Syne display brand, `.section-label`, `.card-quiet` / `.card-elevated` / `.card-accent`, grid atmosphere on `body`, `prefers-reduced-motion` hard-disable, Focus Mode strips atmosphere.
+Patterns: dark navy + cyan accent, Syne display brand, `.section-label`, `.card-quiet` / `.card-elevated` / `.card-accent`, grid atmosphere on `body`, `prefers-reduced-motion` hard-disable.
 
 UI kit: `components/ui/{Button,Card,Badge,PageShell,PageHeader,Breadcrumb,Input,Select,ProgressBar,Skeleton,EmptyState,Toast,ConfirmDialog}.tsx`.
 
@@ -124,7 +124,7 @@ CSP today is restrictive (`connect-src 'self'`). Workers / WASM / blob URLs will
 - `ProgressState` + Zod + `STORAGE_KEY` (additive extensions only)
 - Curriculum / journey / gates / drills math
 - Nav IA groups (Study / Practice / Academy)
-- Focus Mode, Pomodoro, tours
+- Today plan, drills, tours
 - Lab setup checklist IDs used by gates
 - PWA + export/import accountability
 - Existing unit tests as regression anchors

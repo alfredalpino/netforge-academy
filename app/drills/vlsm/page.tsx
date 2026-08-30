@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   generateVlsmQuestion,
@@ -8,8 +8,10 @@ import {
   isVlsmFullyCorrect,
   type VlsmSubnetAssignment,
 } from "@/lib/subnetting";
+import { VLSM_EXAMPLE, VLSM_VIDEO_LINKS } from "@/lib/drill-examples";
 import { useProgress } from "@/lib/progress";
 import { useToast } from "@/components/ui/Toast";
+import { useDrillTimer } from "@/hooks/useDrillTimer";
 import { PageShell } from "@/components/ui/PageShell";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageSkeleton } from "@/components/ui/Skeleton";
@@ -17,6 +19,8 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { DrillTimer } from "@/components/drills/DrillTimer";
+import { DrillLearnPanel } from "@/components/drills/DrillLearnPanel";
 
 const DRILL_TIME_SECONDS = 60;
 
@@ -30,39 +34,27 @@ export default function VlsmDrillPage() {
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [streak, setStreak] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(DRILL_TIME_SECONDS);
-  const [elapsed, setElapsed] = useState(0);
-  const startedAt = useRef<number | null>(null);
+  const submittedRef = useRef(false);
 
-  useEffect(() => {
-    if (submitted) return;
-    if (startedAt.current === null) startedAt.current = Date.now();
+  const handleExpire = useCallback(() => {
+    if (submittedRef.current) return;
+    showToast("Time's up — check your allocations", "warning");
+  }, [showToast]);
 
-    const timer = window.setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          window.clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-      if (startedAt.current) {
-        setElapsed(Math.round((Date.now() - startedAt.current) / 1000));
-      }
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, [question, submitted]);
+  const timer = useDrillTimer({
+    durationSeconds: DRILL_TIME_SECONDS,
+    onExpire: handleExpire,
+  });
+  const { reset: resetTimer } = timer;
 
   const nextQuestion = useCallback(() => {
     const q = generateVlsmQuestion();
     setQuestion(q);
     setAnswers({});
     setSubmitted(false);
-    setSecondsLeft(DRILL_TIME_SECONDS);
-    setElapsed(0);
-    startedAt.current = Date.now();
-  }, []);
+    submittedRef.current = false;
+    resetTimer();
+  }, [resetTimer]);
 
   const toUserAssignments = (): VlsmSubnetAssignment[] =>
     question.requirements.map((req) => ({
@@ -73,7 +65,10 @@ export default function VlsmDrillPage() {
     }));
 
   const handleSubmit = () => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
     setSubmitted(true);
+    const elapsed = timer.elapsed > 0 ? timer.elapsed : DRILL_TIME_SECONDS - timer.secondsLeft;
     const userAssignments = toUserAssignments();
     const allCorrect = isVlsmFullyCorrect(userAssignments, question.answer);
     const newStreak = allCorrect ? streak + 1 : 0;
@@ -82,7 +77,7 @@ export default function VlsmDrillPage() {
       total: s.total + 1,
     }));
     setStreak(newStreak);
-    recordDrillResult(allCorrect, newStreak, elapsed);
+    recordDrillResult(allCorrect, newStreak, Math.max(elapsed, 0));
     showToast(allCorrect ? "Correct!" : "Review the allocations below", allCorrect ? "success" : "warning");
   };
 
@@ -104,10 +99,23 @@ export default function VlsmDrillPage() {
         }
       />
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        <Badge tone={secondsLeft <= 15 && !submitted ? "warning" : "default"}>
-          Timer: {submitted ? `${elapsed}s` : `${secondsLeft}s`}
-        </Badge>
+      <DrillLearnPanel
+        kind="vlsm"
+        examples={[VLSM_EXAMPLE]}
+        videoLinks={VLSM_VIDEO_LINKS}
+      />
+
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <DrillTimer
+          status={timer.status}
+          secondsLeft={timer.secondsLeft}
+          elapsed={timer.elapsed}
+          submitted={submitted}
+          onStart={timer.start}
+          onPause={timer.pause}
+          onResume={timer.resume}
+          onReset={timer.reset}
+        />
         <Badge>
           Session: {score.correct}/{score.total}
         </Badge>

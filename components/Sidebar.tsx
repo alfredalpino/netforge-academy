@@ -226,7 +226,7 @@ export function Sidebar() {
             : "md:translate-x-0 md:opacity-100"
         }`}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-3">
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 overflow-visible px-3">
           <Link href="/" className="min-w-0 truncate" onClick={closeMobile}>
             <BrandMark />
           </Link>
@@ -241,7 +241,6 @@ export function Sidebar() {
                 }
               }}
               className="hidden md:flex"
-              tooltipSide="left"
             />
             <SidebarToggle
               collapsed={false}

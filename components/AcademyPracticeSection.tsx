@@ -72,7 +72,7 @@ export function AcademyPracticeSection({ variant = "dashboard" }: AcademyPractic
           <div>
             <p className="text-xs text-muted">Reinforce today&apos;s module</p>
             <p className="mt-1 text-sm font-medium">
-              {hasTopics ? "Watch a focused lecture, then practice in the browser lab." : "Practice in the browser simulator."}
+              {hasTopics ? "Watch a topic video, then practice in the browser lab." : "Practice in the browser simulator."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

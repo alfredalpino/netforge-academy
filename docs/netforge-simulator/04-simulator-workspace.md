@@ -25,7 +25,7 @@ Matches PRD §8.
 | Bottom dock | Open | Yes (height) | Terminal primary tab |
 | Academy Sidebar | Remains | Existing mobile drawer | Simulator is dense; consider full-bleed option later |
 
-**Tradeoff — hide Academy sidebar in sim:** Gains canvas space; risks losing study OS orientation. P0 keep sidebar; P1 add “Focus canvas” toggle that collapses academy nav (like Focus Mode).
+**Tradeoff — hide Academy sidebar in sim:** Gains canvas space; risks losing study OS orientation. P0 keep sidebar; P1 add “Focus canvas” toggle that collapses academy nav.
 
 ## Component hierarchy (implementation)
 

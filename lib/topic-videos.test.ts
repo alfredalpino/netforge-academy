@@ -30,6 +30,7 @@ describe("resolveTopicSlug", () => {
     { label: "Static routing", slug: "static-routing" },
     { label: "NAT", slug: "nat" },
     { label: "SSH & virtual machines", slug: "ssh" },
+    { label: "Linux fundamentals", slug: "linux-fundamentals" },
     { label: "Collision & broadcast domains", slug: "lan" },
     { label: "Access/trunk ports", slug: "vlan" },
   ];

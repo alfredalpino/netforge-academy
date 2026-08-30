@@ -716,6 +716,19 @@ After [Weeks 25-28 daily plans](dac8c43a-fe5f-4be6-9155-b7e06de1e782) subagent c
 
 Goal already complete (Round 26 audit + Round 27 YouTube fix on `main`). No specialist work assigned.
 
+## Academy UX Phase 2 (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| DrillTimer start/pause/reset | ✅ subnetting + VLSM; no auto-start |
+| Examples + video links | ✅ `DrillLearnPanel` + `lib/drill-examples.ts` |
+| Home simplify | ✅ Start studying CTA; pedagogy off home |
+| Today declutter | ✅ emphasis copy, Mark complete, schedule `<details>` |
+| Page polish | ✅ drills hub, topics, labs, gates, recall |
+| `npm run validate` + smoke E2E | ✅ 15 smoke passed |
+
+Log: `logs/2026-08-30-academy-ux-phase2.log`
+
 ## Master Loop Tick 30 — Idle (2026-08-30)
 
 No new deliverables. Academy goal complete; loop remains idle.
@@ -735,3 +748,23 @@ No new deliverables. Academy goal complete; loop remains idle.
 ## Master Loop Tick 34 — Idle (2026-08-30)
 
 No new deliverables. Academy goal complete; loop remains idle.
+
+## Master Loop Tick 36 — Phase 2 complete (2026-08-30)
+
+UX Phase 2 implemented and validated (15 smoke E2E). Changes are local pending commit/push.
+
+## Master Loop Tick 37 — Playlist integration complete (2026-08-30)
+
+Full courses (CCNA Bombal, Security+ Messer, Bash) + Linux topic video shipped and validated (16 smoke). Still local with Phase 2 pending commit/push.
+
+## Master Loop Tick 38 — Idle (2026-08-30)
+
+No new specialist work. Phase 2 + playlist integration remain local pending commit/push.
+
+## Master Loop Tick 39 — Sidebar + scrollbar polish (2026-08-30)
+
+Fixed stuck sidebar toggle tooltip (hover-only, below icon). Firefox-friendly scrollbar theming (`scrollbar-color` + `color-scheme: dark`). Still local with Phase 2 / playlists pending commit/push.
+
+## Master Loop Tick 40 — Idle (2026-08-30)
+
+No new specialist work. Local changes (Phase 2, playlists, sidebar/scrollbar) still pending commit/push.

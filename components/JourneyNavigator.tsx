@@ -55,7 +55,6 @@ export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
           completedModules={progress.completedModules}
           onJump={handleJump}
         />
-        <AcademyPracticeSection variant="journey" />
       </section>
     );
   }

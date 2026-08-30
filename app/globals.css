@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
   --background: #070b12;
   --foreground: #eef2f7;
   --surface: #10161f;
@@ -242,16 +243,42 @@ a:not([class*="rounded"]) {
   color: #d7e2ef;
 }
 
-/* Scrollbar */
+/* Scrollbars — Firefox (scrollbar-color) + Chromium. Track matches page chrome. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--background);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+html[data-theme="light"] {
+  scrollbar-color: var(--border) var(--background);
+}
+
+html[data-theme="light"] * {
+  scrollbar-color: var(--border) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  border-color: var(--background);
 }
 
 @keyframes pulse-ring {

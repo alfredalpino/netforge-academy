@@ -28,6 +28,6 @@ Broadcast Studio blocks mobile editing — NetForge should prefer **graceful deg
 - Larger hit targets for nodes on tablet
 - Avoid hover-only affordances for connect
 
-## Integration with Focus Mode
+## Canvas density
 
-Simulator is practice denseness ≠ Focus Mode calm. Do not auto-enter `.focus-mode` styles; optional “zen canvas” toggle later.
+Simulator is practice-dense — do not auto-collapse academy chrome. Optional “zen canvas” toggle can collapse the academy nav later if needed.

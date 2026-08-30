@@ -6,6 +6,10 @@ import { useProgress, getDayProgressPercent } from "@/lib/progress";
 import { getDayPlan, getWeekPlans, dayKey } from "@/lib/daily-plans";
 import { DAILY_BLOCKS, WEEKLY_RHYTHM, getWeekPhase, getDayOfWeek } from "@/lib/schedule";
 import { getModule } from "@/lib/curriculum";
+import {
+  getModuleAcademyResources,
+  getSimulatorLabHref,
+} from "@/lib/academy-resources";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
@@ -18,6 +22,14 @@ import { Badge } from "@/components/ui/Badge";
 import { AcademyPracticeSection } from "@/components/AcademyPracticeSection";
 import { TodayShortcutsHelp } from "@/components/TodayShortcutsHelp";
 import { useTodayKeyboard } from "@/hooks/useTodayKeyboard";
+
+const PLAN_SECTIONS = [
+  { title: "Theory", itemsKey: "theory" as const, block: "block-1" },
+  { title: "Configuration", itemsKey: "config" as const, block: "block-2" },
+  { title: "Lab", itemsKey: "lab" as const, block: "block-3" },
+  { title: "Break / Fix", itemsKey: "breakFix" as const, block: "block-4" },
+  { title: "Recall", itemsKey: "recall" as const, block: "block-5" },
+];
 
 export default function TodayPage() {
   const {
@@ -80,17 +92,31 @@ export default function TodayPage() {
   const weekPlans = getWeekPlans(progress.currentWeek);
   const phase = getWeekPhase(progress.currentWeek);
   const dayName = getDayOfWeek(progress.currentWeek, progress.currentDay);
-  const weeklyFocus = WEEKLY_RHYTHM.find((d) => d.day === dayName);
+  const weeklyEmphasis = WEEKLY_RHYTHM.find((d) => d.day === dayName);
   const dayProgress = getDayProgressPercent(
     progress.currentWeek,
     progress.currentDay,
     progress.completedBlocks
   );
   const moduleInfo = getModule(progress.currentModuleId);
+  const resources = getModuleAcademyResources(progress.currentModuleId);
 
   const incompleteBlocks = DAILY_BLOCKS.filter(
     (b) => !isBlockComplete(progress.currentWeek, progress.currentDay, b.id)
   ).length;
+
+  const firstIncomplete = DAILY_BLOCKS.find(
+    (b) => !isBlockComplete(progress.currentWeek, progress.currentDay, b.id),
+  );
+
+  const handleMarkBlock = (blockId: string, title: string) => {
+    if (isBlockComplete(progress.currentWeek, progress.currentDay, blockId)) {
+      showToast(`${title} already complete`, "warning");
+      return;
+    }
+    completeBlock(progress.currentWeek, progress.currentDay, blockId);
+    showToast(`${title} marked complete`);
+  };
 
   const handleMarkDayComplete = async () => {
     if (incompleteBlocks > 0) {
@@ -106,6 +132,17 @@ export default function TodayPage() {
   };
 
   if (!loaded) return <PageSkeleton />;
+
+  const startHref = resources.topic
+    ? `/topics/${resources.topic.slug}`
+    : resources.simulatorLab
+      ? getSimulatorLabHref(resources.simulatorLab.id)
+      : "/drills";
+  const startLabel = resources.topic
+    ? `Start · ${resources.topic.title}`
+    : resources.simulatorLab
+      ? `Start · ${resources.simulatorLab.title}`
+      : "Start · Drills";
 
   return (
     <PageShell testId="today-page">
@@ -154,76 +191,39 @@ export default function TodayPage() {
         </Button>
       </div>
 
-      <AcademyPracticeSection variant="today" />
-
-      {weeklyFocus && (
-        <Card className="mb-6 py-4">
-          <p className="text-xs text-muted">{dayName} focus</p>
-          <p className="font-medium">{weeklyFocus.focus}</p>
-          <ul className="mt-2 list-inside list-disc text-sm text-muted">
-            {weeklyFocus.emphasis.map((e) => (
-              <li key={e}>{e}</li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
       {plan ? (
-        <>
-          <Card data-tour="today-plan" className="mb-8 border-accent/30">
-            <h2 className="text-lg font-medium">{plan.title}</h2>
-            <p className="mt-1 text-sm text-muted">
-              {plan.phase} · {plan.module}
-            </p>
-            {plan.gate && (
-              <div className="mt-3">
-                <Badge tone="warning">Gate: {plan.gate}</Badge>
-              </div>
-            )}
-          </Card>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            {[
-              { title: "Theory", items: plan.theory, block: "block-1" },
-              { title: "Configuration", items: plan.config, block: "block-2" },
-              { title: "Lab", items: [plan.lab], block: "block-3" },
-              { title: "Break / Fix", items: plan.breakFix, block: "block-4" },
-              { title: "Recall", items: plan.recall, block: "block-5" },
-            ].map((section) =>
-              section.items.length > 0 && section.items[0] !== "" ? (
-                <Card key={section.title} className="py-5">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium">{section.title}</h3>
-                    {isBlockComplete(progress.currentWeek, progress.currentDay, section.block) && (
-                      <Badge tone="success">Done</Badge>
-                    )}
-                  </div>
-                  <ul className="mt-3 space-y-2">
-                    {section.items.map((item, i) => (
-                      <li key={i} className="text-sm leading-relaxed text-muted">
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              ) : null
+        <Card data-tour="today-plan" className="mb-6 border-accent/30">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-medium">{plan.title}</h2>
+              <p className="mt-1 text-sm text-muted">
+                {plan.phase} · {plan.module}
+              </p>
+              {weeklyEmphasis && (
+                <p className="mt-2 text-sm text-muted">
+                  <span className="text-foreground/80">Today&apos;s emphasis: </span>
+                  {weeklyEmphasis.focus}
+                </p>
+              )}
+              {plan.gate && (
+                <div className="mt-3">
+                  <Badge tone="warning">Gate: {plan.gate}</Badge>
+                </div>
+              )}
+            </div>
+            {firstIncomplete && (
+              <Link href={startHref}>
+                <Button data-testid="today-start-action">{startLabel}</Button>
+              </Link>
             )}
           </div>
-
-          {!isDayComplete(progress.currentWeek, progress.currentDay) && (
-            <div className="mt-8">
-              <Button variant="success" onClick={handleMarkDayComplete}>
-                Mark Day Complete
-              </Button>
-            </div>
-          )}
-        </>
+        </Card>
       ) : (
-        <Card className="mb-8 border-warning/30 bg-warning/5">
+        <Card className="mb-6 border-warning/30 bg-warning/5">
           <h2 className="text-lg font-medium text-warning">Module study mode</h2>
           <p className="mt-2 text-sm text-muted">
             Detailed day-by-day plans are available for weeks 1–28. For week {progress.currentWeek},
-            study from the current curriculum module and follow the daily block template below.
+            study from the current curriculum module.
           </p>
           {moduleInfo && (
             <Link
@@ -236,9 +236,65 @@ export default function TodayPage() {
         </Card>
       )}
 
-      <Card className="mt-12">
-        <h3 className="mb-4 text-sm font-medium text-muted">Daily Schedule Template</h3>
-        <div className="space-y-2">
+      <AcademyPracticeSection variant="today" />
+
+      {plan && (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {PLAN_SECTIONS.map((section) => {
+              const raw =
+                section.itemsKey === "lab" ? [plan.lab] : plan[section.itemsKey];
+              const items = raw.filter((item) => item !== "");
+              if (items.length === 0) return null;
+              const done = isBlockComplete(
+                progress.currentWeek,
+                progress.currentDay,
+                section.block,
+              );
+              return (
+                <Card key={section.title} className="py-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-medium">{section.title}</h3>
+                    {done && <Badge tone="success">Done</Badge>}
+                  </div>
+                  <ul className="mt-3 space-y-2">
+                    {items.map((item, i) => (
+                      <li key={i} className="text-sm leading-relaxed text-muted">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  {!done && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="mt-4"
+                      data-testid={`mark-block-${section.block}`}
+                      onClick={() => handleMarkBlock(section.block, section.title)}
+                    >
+                      Mark complete
+                    </Button>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+
+          {!isDayComplete(progress.currentWeek, progress.currentDay) && (
+            <div className="mt-8">
+              <Button variant="success" onClick={handleMarkDayComplete}>
+                Mark Day Complete
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+
+      <details className="mt-12 rounded-xl border border-border bg-surface/60 px-4 py-3">
+        <summary className="cursor-pointer text-sm font-medium text-muted">
+          Daily schedule template (optional)
+        </summary>
+        <div className="mt-4 space-y-2 pb-2">
           {DAILY_BLOCKS.map((b) => (
             <div
               key={b.id}
@@ -252,7 +308,7 @@ export default function TodayPage() {
             </div>
           ))}
         </div>
-      </Card>
+      </details>
     </PageShell>
   );
 }
