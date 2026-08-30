@@ -35,6 +35,17 @@ test.describe("Academy smoke", () => {
     await expect(main(page).getByText(/51 single-concept explanation videos/)).toBeVisible();
   });
 
+  test("topic page embeds YouTube video", async ({ page }) => {
+    await page.goto("/topics/network-devices");
+    await expect(main(page).getByRole("heading", { name: "Network Devices" })).toBeVisible();
+    const iframe = page.locator('[data-testid="youtube-embed"] iframe');
+    await expect(iframe).toBeVisible();
+    await expect(iframe).toHaveAttribute(
+      "src",
+      /youtube-nocookie\.com\/embed\/H8W9oMNSuwo/,
+    );
+  });
+
   test("labs page lists browser simulator labs", async ({ page }) => {
     await page.goto("/labs");
     await expect(main(page).getByRole("heading", { name: "Lab Stack" })).toBeVisible();

@@ -1,0 +1,15 @@
+# Academy Loop Round 27 — YouTube embed fix (2026-08-30)
+
+## Problem
+Topic video pages showed a blank black box — CSP in `next.config.ts` had no `frame-src`, so YouTube iframes were blocked (default-src 'self' only).
+
+## Fix
+- Added `frame-src` for youtube.com + youtube-nocookie.com
+- Added `img-src` for i.ytimg.com (thumbnail poster while iframe loads)
+- `YouTubeEmbed` → client component with thumbnail poster + onLoad fade
+- `lib/youtube-embed.ts` helpers + unit test
+- E2E: topic page iframe src check for network-devices
+
+## Validation
+- npm run validate
+- npm run test:e2e (smoke incl. topic embed)
