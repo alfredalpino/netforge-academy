@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useProgress, getOverallProgress } from "@/lib/progress";
 import { JOURNEY_MILESTONES, getMilestoneIndex } from "@/lib/journey";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { AcademyPracticeSection } from "@/components/AcademyPracticeSection";
 
 interface JourneyNavigatorProps {
   compact?: boolean;
@@ -54,6 +55,7 @@ export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
           completedModules={progress.completedModules}
           onJump={handleJump}
         />
+        <AcademyPracticeSection variant="journey" />
       </section>
     );
   }
@@ -92,6 +94,7 @@ export function JourneyNavigator({ compact = false }: JourneyNavigatorProps) {
         completedModules={progress.completedModules}
         onJump={handleJump}
       />
+      <AcademyPracticeSection variant="journey" />
     </section>
   );
 }

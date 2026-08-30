@@ -42,12 +42,6 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Open today's study blocks and tasks",
       },
       {
-        name: "Focus Mode",
-        short_name: "Focus",
-        url: "/focus",
-        description: "Enter distraction-free focus mode",
-      },
-      {
         name: "Drills",
         short_name: "Drills",
         url: "/drills",

@@ -57,14 +57,14 @@ interface ProgressContextValue {
   setNote: (key: string, note: string) => void;
   recordDrillResult: (correct: boolean, currentStreak: number, timeSeconds?: number) => void;
   toggleLabSetup: (stepId: string) => void;
-  toggleFocusChecklist: (key: string) => void;
-  setFocusChecklist: (checklist: Record<string, boolean>) => void;
+  recordSimulatorLabPass: (labId: string) => void;
   importProgress: (data: unknown) => { success: boolean; error?: string };
   exportProgress: () => string;
   resetProgress: () => void;
   isDayComplete: (week: number, day: number) => boolean;
   isBlockComplete: (week: number, day: number, blockId: string) => boolean;
   isModuleComplete: (moduleId: string) => boolean;
+  isSimulatorLabComplete: (labId: string) => boolean;
 }
 
 const ProgressContext = createContext<ProgressContextValue | null>(null);
@@ -283,28 +283,17 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     [progress, persist]
   );
 
-  const toggleFocusChecklist = useCallback(
-    (key: string) => {
-      const current = progress.focusChecklists[key] ?? false;
-      persist({
-        ...progress,
-        focusChecklists: {
-          ...progress.focusChecklists,
-          [key]: !current,
-        },
-      });
+  const recordSimulatorLabPass = useCallback(
+    (labId: string) => {
+      if (progress.completedSimulatorLabs.includes(labId)) return;
+      persist(
+        updateStreak({
+          ...progress,
+          completedSimulatorLabs: [...progress.completedSimulatorLabs, labId],
+        })
+      );
     },
-    [progress, persist]
-  );
-
-  const setFocusChecklist = useCallback(
-    (checklist: Record<string, boolean>) => {
-      persist({
-        ...progress,
-        focusChecklists: checklist,
-      });
-    },
-    [progress, persist]
+    [progress, persist, updateStreak]
   );
 
   const importProgress = useCallback((data: unknown) => {
@@ -343,6 +332,11 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     [progress.completedModules]
   );
 
+  const isSimulatorLabComplete = useCallback(
+    (labId: string) => progress.completedSimulatorLabs.includes(labId),
+    [progress.completedSimulatorLabs]
+  );
+
   const value = useMemo<ProgressContextValue>(
     () => ({
       progress,
@@ -361,14 +355,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       setNote,
       recordDrillResult,
       toggleLabSetup,
-      toggleFocusChecklist,
-      setFocusChecklist,
+      recordSimulatorLabPass,
       importProgress,
       exportProgress,
       resetProgress,
       isDayComplete,
       isBlockComplete,
       isModuleComplete,
+      isSimulatorLabComplete,
     }),
     [
       progress,
@@ -386,14 +380,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       setNote,
       recordDrillResult,
       toggleLabSetup,
-      toggleFocusChecklist,
-      setFocusChecklist,
+      recordSimulatorLabPass,
       importProgress,
       exportProgress,
       resetProgress,
       isDayComplete,
       isBlockComplete,
       isModuleComplete,
+      isSimulatorLabComplete,
     ]
   );
 

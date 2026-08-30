@@ -10,7 +10,9 @@ import type {
   SimulationEvent,
 } from "@/simulation/core/types";
 
-export type CanvasPosition = { x: number; y: number };
+export type CanvasLayout = { x: number; y: number; width?: number; height?: number };
+/** @deprecated Use CanvasLayout */
+export type CanvasPosition = CanvasLayout;
 
 type SimulatorStore = {
   labId: string | null;
@@ -18,13 +20,15 @@ type SimulatorStore = {
   status: string;
   selectedId: string | null;
   dockTab: DockTabId;
-  positions: Record<string, CanvasPosition>;
+  positions: Record<string, CanvasLayout>;
   devices: NetworkDevice[];
   links: NetworkLink[];
   traces: PacketTrace[];
   events: SimulationEvent[];
   selectedPacketId: string | null;
   grade: GradeReport | null;
+  /** Score check id highlighted when jumping Tutor ↔ Score */
+  highlightedCheckId: string | null;
   termLines: string[];
   termPromptByDevice: Record<string, string>;
   connectFrom: { deviceId: string; interfaceName: string } | null;
@@ -32,8 +36,9 @@ type SimulatorStore = {
   setStatus: (s: string) => void;
   setSelectedId: (id: string | null) => void;
   setDockTab: (t: DockTabId) => void;
-  setPositions: (p: Record<string, CanvasPosition>) => void;
-  patchPosition: (id: string, pos: CanvasPosition) => void;
+  setPositions: (p: Record<string, CanvasLayout>) => void;
+  patchPosition: (id: string, pos: CanvasLayout) => void;
+  patchNodeLayout: (id: string, patch: Partial<CanvasLayout>) => void;
   applyMirror: (m: {
     devices: NetworkDevice[];
     links: NetworkLink[];
@@ -41,6 +46,7 @@ type SimulatorStore = {
     events: SimulationEvent[];
   }) => void;
   setGrade: (g: GradeReport | null) => void;
+  setHighlightedCheckId: (id: string | null) => void;
   setSelectedPacketId: (id: string | null) => void;
   appendTerm: (line: string) => void;
   setTermLines: (lines: string[]) => void;
@@ -63,6 +69,7 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
   events: [],
   selectedPacketId: null,
   grade: null,
+  highlightedCheckId: null,
   termLines: [],
   termPromptByDevice: {},
   connectFrom: null,
@@ -76,6 +83,13 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
   setPositions: (positions) => set({ positions }),
   patchPosition: (id, pos) =>
     set((s) => ({ positions: { ...s.positions, [id]: pos } })),
+  patchNodeLayout: (id, patch) =>
+    set((s) => ({
+      positions: {
+        ...s.positions,
+        [id]: { ...s.positions[id], ...patch },
+      },
+    })),
   applyMirror: (m) =>
     set({
       devices: m.devices,
@@ -83,7 +97,8 @@ export const useSimulatorStore = create<SimulatorStore>((set) => ({
       traces: m.traces,
       events: m.events,
     }),
-  setGrade: (grade) => set({ grade }),
+  setGrade: (grade) => set({ grade, highlightedCheckId: null }),
+  setHighlightedCheckId: (highlightedCheckId) => set({ highlightedCheckId }),
   setSelectedPacketId: (selectedPacketId) => set({ selectedPacketId }),
   appendTerm: (line) =>
     set((s) => ({ termLines: [...s.termLines, line] })),

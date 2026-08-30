@@ -101,13 +101,15 @@ export function TerminalPane({
   useEffect(() => {
     const term = termRef.current;
     if (!term) return;
+    let wroteOutput = false;
     while (linesLenRef.current < lines.length) {
-      const line = lines[linesLenRef.current++];
-      // Commands already echoed by local typing; skip exact prompt echoes if needed
-      term.writeln(line);
+      term.writeln(lines[linesLenRef.current++]);
+      wroteOutput = true;
     }
-    term.write(`${prompt} `);
-  }, [lines, prompt]);
+    if (wroteOutput) {
+      term.write(`${promptRef.current} `);
+    }
+  }, [lines]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { LAB_STACK } from "@/lib/curriculum";
+import { LAB_LIST } from "@/content/labs";
 import { getWeekLabRunbooks } from "@/lib/lab-runbooks";
 import { useProgress } from "@/lib/progress";
 import { LabSetupChecklist } from "@/components/LabSetupChecklist";
@@ -11,12 +12,46 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 
+const LAB_BLURBS: Record<string, string> = {
+  "basic-lan":
+    "Address a router and host through a switch, then grade a live ping — runs entirely in your browser.",
+  "vlan-segment":
+    "Access VLANs, trunk ports, and isolation — see why same-switch hosts still fail across VLANs.",
+  "arp-icmp":
+    "Two hosts on one subnet — configure IPs and ping; trace ARP resolution and ICMP in the Packets tab.",
+  "trunk-vlan":
+    "802.1Q trunk between two switches — extend VLAN 10 so hosts on different switches can reach each other.",
+  "static-route":
+    "Two routers, two LANs — static routes on both sides for end-to-end connectivity across subnets.",
+  "ospf-basic":
+    "Two routers, two LANs — OSPF process 1 area 0 on both sides; verify neighbors FULL and ping across subnets.",
+  "dhcp-basic":
+    "Router DHCP pool on a switched LAN — configure pool + `ip address dhcp` on PC1; watch DORA in Capture.",
+  "stp-loop":
+    "Three switches in a triangle — STP blocks one redundant link; address PCs and ping across the spanning tree.",
+  "acl-standard":
+    "Two LANs on one router — standard ACL denies one subnet; verify one-way ping block with `show access-lists`.",
+  "inter-vlan-routing":
+    "Router-on-a-stick — dot1Q subinterfaces on R1 route between VLAN 10 and VLAN 20 through a trunk.",
+  "acl-extended":
+    "Extended ACL 100 — deny ICMP between subnets on R1; verify ping block with `show access-lists` hit counts.",
+  "inter-vlan-svi":
+    "Multilayer switch SVIs — Vlan10/Vlan20 gateways + `ip routing` route between access VLANs without a router.",
+  "nat-basic":
+    "PAT overload on R1 — inside/outside NAT, ACL 1, and ping from private PC to outside server via translated source IP.",
+  "acl-tcp":
+    "Extended ACL 101 — deny TCP dst eq 80 from PC1 subnet to PC2; permit ip any any. Probe ports 80 vs 443; ping still works.",
+};
+
 export default function LabsPage() {
-  const { progress, loaded } = useProgress();
+  const { progress, loaded, isSimulatorLabComplete } = useProgress();
   const weekRunbooks = loaded ? getWeekLabRunbooks(progress.currentWeek) : [];
+  const passedCount = loaded
+    ? LAB_LIST.filter((l) => isSimulatorLabComplete(l.id)).length
+    : 0;
 
   return (
-    <PageShell>
+    <PageShell testId="labs-page">
       <PageHeader
         eyebrow="Lab Environment"
         title="Lab Stack"
@@ -34,32 +69,36 @@ export default function LabsPage() {
       />
 
       <section className="mb-10">
-        <h2 className="mb-4 text-sm font-medium">Browser labs (zero install)</h2>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-medium">Browser labs (zero install)</h2>
+          {loaded && (
+            <Badge tone={passedCount === LAB_LIST.length ? "success" : "default"}>
+              {passedCount}/{LAB_LIST.length} passed
+            </Badge>
+          )}
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Card className="flex flex-col">
-            <h3 className="font-medium">Basic LAN Connectivity</h3>
-            <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
-              Address a router and host through a switch, then grade a live ping —
-              runs entirely in your browser.
-            </p>
-            <Link href="/simulator?lab=basic-lan" className="mt-4">
-              <Button size="sm" variant="secondary">
-                Launch lab
-              </Button>
-            </Link>
-          </Card>
-          <Card className="flex flex-col">
-            <h3 className="font-medium">VLAN Segmentation</h3>
-            <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
-              Access VLANs, trunk ports, and isolation — see why same-switch hosts
-              still fail across VLANs.
-            </p>
-            <Link href="/simulator?lab=vlan-segment" className="mt-4">
-              <Button size="sm" variant="secondary">
-                Launch lab
-              </Button>
-            </Link>
-          </Card>
+          {LAB_LIST.map((lab) => (
+            <Card key={lab.id} className="flex flex-col">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-medium">{lab.title}</h3>
+                <div className="flex shrink-0 flex-wrap gap-1">
+                  {loaded && isSimulatorLabComplete(lab.id) && (
+                    <Badge tone="success">Passed</Badge>
+                  )}
+                  <Badge tone="default">{lab.difficulty}</Badge>
+                </div>
+              </div>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
+                {LAB_BLURBS[lab.id] ?? lab.objectives[0]}
+              </p>
+              <Link href={`/simulator?lab=${lab.id}`} className="mt-4">
+                <Button size="sm" variant="secondary">
+                  Launch lab
+                </Button>
+              </Link>
+            </Card>
+          ))}
         </div>
       </section>
 
@@ -130,15 +169,15 @@ export default function LabsPage() {
       <Card className="mt-10 border-accent/30">
         <h2 className="text-sm font-medium">Distraction-Free Workflow</h2>
         <ol className="mt-3 list-inside list-decimal space-y-2 text-sm leading-relaxed text-muted">
-          <li>Open NetForge in one browser window — Focus Mode only</li>
+          <li>Open NetForge in one browser window — Today page for your plan</li>
           <li>Run labs in Packet Tracer / EVE-NG / VMs — not YouTube</li>
           <li>Wireshark on second monitor for packet analysis blocks</li>
           <li>Phone in another room during deep work blocks</li>
           <li>Saturday = assessment day; Sunday = light review only</li>
         </ol>
-        <Link href="/focus" className="mt-4 inline-block">
+        <Link href="/today" className="mt-4 inline-block">
           <Button variant="ghost" className="px-0">
-            Enter Focus Mode →
+            Open Today&apos;s Plan →
           </Button>
         </Link>
       </Card>

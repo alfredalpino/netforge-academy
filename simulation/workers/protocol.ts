@@ -46,6 +46,7 @@ export type ToWorker =
       b: { deviceId: string; interfaceName: string };
       requestId: string;
     }
+  | { v: 1; type: "applyStartup"; lab: LabSpec; requestId: string }
   | { v: 1; type: "removeDevice"; deviceId: string; requestId: string }
   | { v: 1; type: "removeLink"; linkId: string; requestId: string }
   | { v: 1; type: "getState"; requestId: string };

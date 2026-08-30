@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import { SimulationController } from "../core/controller";
-import { gradeLab } from "../grading/lab-schema";
+import { applyStartupConfig, gradeLab } from "../grading/lab-schema";
 import type { FromWorker, ToWorker } from "./protocol";
 import { WORKER_PROTOCOL_VERSION } from "./protocol";
 
@@ -116,6 +116,15 @@ self.onmessage = (ev: MessageEvent<ToWorker>) => {
         });
         break;
       }
+      case "applyStartup":
+        applyStartupConfig(sim, msg.lab);
+        reply({
+          v: 1,
+          type: "state",
+          requestId: msg.requestId,
+          mirror: mirror(),
+        });
+        break;
       case "removeDevice":
         sim.removeDevice(msg.deviceId);
         reply({

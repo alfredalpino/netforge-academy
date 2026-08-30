@@ -14,11 +14,14 @@ import { TerminalPane } from "@/features/simulator/dock/TerminalPane";
 import { PacketsPane } from "@/features/simulator/dock/PacketsPane";
 import { EventsPane } from "@/features/simulator/dock/EventsPane";
 import { ScorePane } from "@/features/simulator/dock/ScorePane";
-import { StubPane } from "@/features/simulator/dock/StubPane";
+import { CapturePane } from "@/features/simulator/dock/CapturePane";
+import { TutorPane } from "@/features/simulator/dock/TutorPane";
 import { useSimulationEngine } from "@/features/simulator/hooks/useSimulationEngine";
 import { useSimulatorStore } from "@/features/simulator/store/simulatorStore";
-import { BASIC_LAN_LAB } from "@/content/labs/basic-lan";
-import { VLAN_SEGMENT_LAB } from "@/content/labs/vlan-segment";
+import { useNavLayout } from "@/components/NavLayoutContext";
+import { useProgress } from "@/lib/progress";
+import { useToast } from "@/components/ui/Toast";
+import { LAB_CATALOG } from "@/content/labs";
 import { topologyFromLab } from "@/simulation/grading/lab-schema";
 import {
   saveWorkspace,
@@ -29,15 +32,15 @@ import type { LabSpec } from "@/simulation/grading/lab-schema";
 
 const WORKSPACE_ID = "default";
 
-const CATALOG: Record<string, LabSpec> = {
-  "basic-lan": BASIC_LAN_LAB,
-  "vlan-segment": VLAN_SEGMENT_LAB,
-};
+const CATALOG = LAB_CATALOG;
 
 export function SimulatorShell() {
   const engine = useSimulationEngine();
   const search = useSearchParams();
   const store = useSimulatorStore();
+  const { collapsed: navCollapsed } = useNavLayout();
+  const { recordSimulatorLabPass } = useProgress();
+  const { showToast } = useToast();
 
   const selectedDevice = store.selectedId
     ? store.devices.find((d) => d.id === store.selectedId)
@@ -117,6 +120,15 @@ export function SimulatorShell() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deep-link once on mount
   }, []);
+
+  useEffect(() => {
+    const onSelectDevice = (event: Event) => {
+      const id = (event as CustomEvent<{ id: string }>).detail?.id;
+      if (id) store.setSelectedId(id);
+    };
+    window.addEventListener("simulator:select-device", onSelectDevice);
+    return () => window.removeEventListener("simulator:select-device", onSelectDevice);
+  }, [store]);
 
   const onAddDevice = useCallback(
     async (type: DeviceType) => {
@@ -200,24 +212,32 @@ export function SimulatorShell() {
     const report = await engine.grade(lab);
     store.setGrade(report);
     store.setDockTab("score");
+    if (report.passed && store.labId) {
+      recordSimulatorLabPass(store.labId);
+      showToast(`Lab passed · ${report.score}% — saved to progress`);
+    }
     store.setStatus(
       report.passed ? `Passed · ${report.score}%` : `Score ${report.score}%`,
     );
-  }, [engine, store]);
+  }, [engine, store, recordSimulatorLabPass, showToast]);
 
   const selectedPacket = store.traces.find(
     (t) => t.packetId === store.selectedPacketId,
   );
 
   return (
-    <div className="sim-workspace flex h-[calc(100dvh-3.5rem)] flex-col md:h-dvh">
+    <div
+      data-testid="simulator-page"
+      className="sim-workspace flex h-[calc(100dvh-3.5rem)] flex-col md:h-dvh"
+    >
       <SimTopBar
         labTitle={store.labTitle}
         statusLabel={`${store.status} · DES main`}
-        onLoadSample={() => void loadLab(BASIC_LAN_LAB)}
+        onLoadSample={() => void loadLab(LAB_CATALOG["basic-lan"])}
         onSave={() => void onSave()}
         onRestore={() => void onRestore()}
         onSubmit={() => void onSubmitLab()}
+        navCollapsed={navCollapsed}
       />
       <p className="border-b border-border bg-surface/80 px-3 py-1 text-[0.65rem] text-muted">
         NetForgeOS — educational Cisco-style CLI. Not affiliated with Cisco or Fortinet.
@@ -225,7 +245,7 @@ export function SimulatorShell() {
         <button
           type="button"
           className="text-accent underline-offset-2 hover:underline"
-          onClick={() => void loadLab(VLAN_SEGMENT_LAB)}
+          onClick={() => void loadLab(LAB_CATALOG["vlan-segment"])}
         >
           Load VLAN lab
         </button>
@@ -240,6 +260,7 @@ export function SimulatorShell() {
             positions={store.positions}
             selectedId={store.selectedId}
             hopDeviceIds={hopIds}
+            layoutKey={`${store.labId ?? "empty"}:${store.devices.map((d) => d.id).join(",")}`}
             onSelect={store.setSelectedId}
             onPositionsChange={store.setPositions}
             onConnectDevices={(a, b) => void onConnectDevices(a, b)}
@@ -255,7 +276,7 @@ export function SimulatorShell() {
             prompt={termPrompt}
             onSubmitLine={(line) => void onSubmitLine(line)}
             disabled={!store.selectedId}
-            resetKey={store.labId ?? "none"}
+            resetKey={`${store.labId ?? "none"}:${store.selectedId ?? "none"}`}
           />
         )}
         {store.dockTab === "packets" && (
@@ -303,9 +324,10 @@ export function SimulatorShell() {
           />
         )}
         {store.dockTab === "capture" && (
-          <StubPane
-            title="Capture buffer"
-            description="Live traces feed Packets tab now; PCAP export is next."
+          <CapturePane
+            traces={store.traces}
+            selectedId={store.selectedPacketId}
+            onSelect={store.setSelectedPacketId}
           />
         )}
         {store.dockTab === "score" && (
@@ -318,12 +340,25 @@ export function SimulatorShell() {
               pass: c.pass,
               detail: c.detail,
             }))}
+            highlightedCheckId={store.highlightedCheckId}
+            onRequestHint={(checkId) => {
+              store.setHighlightedCheckId(checkId);
+              store.setDockTab("tutor");
+            }}
           />
         )}
         {store.dockTab === "tutor" && (
-          <StubPane
-            title="Tutor"
-            description="Structured root-cause from check evidence lands after VLAN polish — no LLM yet."
+          <TutorPane
+            grade={store.grade}
+            traces={store.traces}
+            selectedPacketId={store.selectedPacketId}
+            labTitle={store.labTitle}
+            labId={store.labId}
+            highlightedCheckId={store.highlightedCheckId}
+            onViewScore={(checkId) => {
+              if (checkId) store.setHighlightedCheckId(checkId);
+              store.setDockTab("score");
+            }}
           />
         )}
       </BottomDock>

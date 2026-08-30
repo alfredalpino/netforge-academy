@@ -1,37 +1,39 @@
 # NetForge Academy — Next Phase Plan
 
 **Created:** 2026-08-28  
-**Start:** Tomorrow morning  
-**Status:** Planning only — no implementation yet
+**Updated:** 2026-08-30  
+**Status:** Active — simulator + content sprint in progress
 
 ---
 
 ## Where We Are
 
-The full audit shipped:
+Shipped and validated (`npm run validate` + Playwright E2E):
 
-- ProgressProvider + Zod-validated localStorage
-- UI design system (PageShell, Card, Button, Badge, etc.)
-- Certification gates, drill timer, export/import
-- Error boundaries, security headers, CI + Vitest
-- All 11 routes polished and `npm run validate` passing
+- **Week 1–28 day plans** in `lib/daily-plans.ts`
+- **14 graded browser simulator labs** — L2/L3 through OSPF, DHCP, STP, ACLs (ICMP + TCP ports), inter-VLAN routing (ROAS + SVI), NAT PAT
+- **Simulator engine** — VLAN/trunk, static/OSPF routes, DHCP DORA, STP blocking, standard + extended ACLs (with TCP/UDP port eq), router subinterfaces (ROAS), L3 switch SVIs, NAT PAT overload, capture/tutor panes, Web Worker runtime
+- **96 unit tests**, **27 E2E tests** (smoke incl. gates/drills + all 14 sim lab interactions)
+- Progress, gates, drills, topic videos (51 lectures), journey navigator
+- **Today keyboard shortcuts** — day nav (N/P), block toggle (1–5), ? help overlay
 
-**Biggest content gap:** Day-by-day plans exist for weeks 1–4 only. Weeks 5–28 fall back to module study mode.
+**Status:** Production-ready for browser-deliverable scope (see `logs/2026-08-30-production-audit.log`).
+
+**Optional expansion:** lab runbooks for weeks beyond 5–6; Supabase sync (Phase 5).
 
 ---
 
 ## Phase 1 — Content & Learning Loop (Priority: High)
 
-Goal: Make weeks 5–28 as actionable as weeks 1–4.
+Goal: Tie daily plans to simulator labs and topic videos per module.
 
 | # | Feature | Why | Scope |
 |---|---------|-----|-------|
-| 1.1 | **Week 5–8 day plans** | Unblocks module study mode for Phase 1 completion | Add daily plans in `lib/daily-plans.ts` following existing block structure |
-| 1.2 | **Week 9–12 day plans** | Phase 2 (Routing) needs structured daily execution | Same format: theory, config, lab, break/fix, recall |
-| 1.3 | **Module-linked focus content** | Focus mode should pull richer material per module | Extend `lib/focus-content.ts` with per-module study sections |
-| 1.4 | **Lab runbooks per week** | Labs page is setup-only; students need step-by-step | Add lab instructions keyed to week/day in `lib/labs.ts` or curriculum |
+| 1.1 | **Module → lab mapping** | Students need clear sim deep links per week | Extend `lib/academy-resources.ts` as new labs land |
+| 1.2 | **Lab runbooks per week** | Labs page needs step-by-step for browser + local stack | `lib/lab-runbooks.ts` keyed to week/day |
+| 1.3 | **Guide + README hygiene** | Onboarding docs match catalog | Keep `/guide`, README lab table current |
 
-**Done when:** Today + Focus pages show full day plans through week 12, with lab steps linked from `/labs`.
+**Done when:** Today + Labs pages deep-link to the right browser lab for each VLAN/routing/security week.
 
 ---
 
@@ -44,7 +46,7 @@ Goal: Turn drills from a single subnet page into a certification prep engine.
 | 2.1 | **VLSM drill mode** | CCNA gate requires subnet mastery beyond /24 | New question generator in `lib/subnetting.ts` |
 | 2.2 | **Recall quiz mode** | Daily recall block needs in-app practice | Flashcard-style component; questions from day plan recall items |
 | 2.3 | **Drill dashboard** | One page for all drill types + history | `/drills` index with stats from `progress.drillStats` |
-| 2.4 | **Gate-linked drill targets** | Gates page shows readiness but no drill CTAs | Link each gate to required drill thresholds (e.g. 20-streak subnet) |
+| 2.4 | **Gate-linked drill targets** | Gates page shows readiness but no drill CTAs | ✅ Subnetting, VLSM, sim labs, wireshark, curriculum CTAs |
 
 **Done when:** Student can run subnet + recall drills, see history, and gates reflect drill progress with clear next actions.
 
@@ -56,9 +58,9 @@ Goal: Stronger motivation and safer data handling.
 
 | # | Feature | Why | Scope |
 |---|---------|-----|-------|
-| 3.1 | **Weekly review screen** | Sunday rhythm exists in schedule but no UI | `/accountability/weekly` or section: goals vs actual, block completion |
-| 3.2 | **Milestone celebrations** | Phase/module completion should feel rewarding | Toast + optional confetti (respect `prefers-reduced-motion`) |
-| 3.3 | **Auto-backup reminder** | localStorage is fragile | Prompt export every N days; show last backup date |
+| 3.1 | **Weekly review screen** | Sunday rhythm exists in schedule but no UI | ✅ WeeklyReview on `/accountability` |
+| 3.2 | **Milestone celebrations** | Phase/module completion should feel rewarding | ✅ Toast + confetti (respects `prefers-reduced-motion`) |
+| 3.3 | **Auto-backup reminder** | localStorage is fragile | ✅ Banner on accountability when ≥7 days since export |
 | 3.4 | **Progress diff on import** | Import is all-or-nothing | Preview imported state before overwrite |
 
 **Done when:** Weekly review flow works; import shows preview; backup nudges appear after 7 days without export.
@@ -71,12 +73,12 @@ Goal: Polish for daily 7-hour use.
 
 | # | Feature | Why | Scope |
 |---|---------|-----|-------|
-| 4.1 | **Keyboard shortcuts** | Focus mode power users | `Space` pause, `N` next block, `?` help overlay |
-| 4.2 | **Dark/light theme toggle** | Long study sessions | CSS variables already exist; add toggle in sidebar |
-| 4.3 | **PWA / offline shell** | Study without network after first load | `next-pwa` or manual service worker for static routes |
-| 4.4 | **E2E tests** | CI only has unit tests | Playwright smoke: dashboard → today → focus → drill |
+| 4.1 | **Keyboard shortcuts** | Daily plan power users | ✅ Today: N/P day nav, 1–5 block toggle, `?` help overlay |
+| 4.2 | **Dark/light theme toggle** | Long study sessions | ✅ Sidebar toggle + light tokens |
+| 4.3 | **PWA / offline shell** | Study without network after first load | ✅ PwaProvider, service worker, install prompt, IDB mirror |
+| 4.4 | **E2E tests** | CI only had unit tests | ✅ Playwright smoke + all 14 sim lab interactions; CI job on PR |
 
-**Done when:** Keyboard nav works in focus mode; Playwright runs in CI on PR.
+**Done when:** Playwright runs in CI on PR; keyboard nav in Today/study blocks. ✅ Today shortcuts shipped.
 
 ---
 
@@ -128,10 +130,10 @@ Goal: Optional sync and deployment hardening. Only if you want multi-device or s
 
 ## Success Metrics (End of Next Sprint)
 
-1. Day plans through **week 8** at minimum
-2. **2+ drill types** with stats feeding gates
-3. **Weekly review** UI on accountability page
-4. **Playwright smoke test** in CI (stretch)
+1. Day plans through **week 28** ✅
+2. **≥10 graded simulator labs** ✅ (11)
+3. **Playwright E2E** in repo ✅ — CI job on PR ✅
+4. **SVI or NAT** stub + lab (next engine target)
 5. Vercel production deploy green after each push
 
 ---
@@ -141,7 +143,7 @@ Goal: Optional sync and deployment hardening. Only if you want multi-device or s
 | Area | Files |
 |------|-------|
 | Daily plans | `lib/daily-plans.ts`, `lib/schedule.ts` |
-| Focus content | `lib/focus-content.ts` |
+| Simulator labs | `content/labs/index.ts`, `lib/academy-resources.ts` |
 | Drills | `lib/subnetting.ts`, `app/drills/subnetting/page.tsx` |
 | Gates | `lib/gates.ts`, `app/gates/page.tsx` |
 | Progress | `lib/progress.tsx`, `lib/progress-schema.ts` |

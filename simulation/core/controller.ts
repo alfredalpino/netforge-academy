@@ -23,6 +23,56 @@ import {
   parseIpv4,
 } from "./net-utils";
 import { buildTopology, findIface, peerFor } from "./topology";
+import {
+  buildDhcpTraces,
+  findDhcpOffer,
+  upsertDhcpPool,
+  maskToPrefix as dhcpMaskToPrefix,
+} from "./dhcp";
+import {
+  addOspfNetwork as applyOspfNetwork,
+  ensureOspfProcess as initOspfProcess,
+  rebuildAllOspfRoutes,
+  setOspfRouterId as applyOspfRouterId,
+} from "./ospf";
+import {
+  findStpRootId,
+  formatSpanningTree,
+  isStpBlocked,
+  rebuildAllStp,
+} from "./stp";
+import {
+  addStandardAclEntry as applyStandardAclEntry,
+  addExtendedAclEntry as applyExtendedAclEntry,
+  evaluateAccessList,
+  findAccessList,
+  formatAccessLists,
+} from "./acl";
+import {
+  createSubinterface,
+  findInterfaceOwningIp,
+  findSubinterfaceForVlan,
+  getPhysicalInterface,
+  isSubinterface,
+  parseSubinterfaceName,
+  syncAllSubinterfaces,
+  syncSubinterfaceOperState,
+} from "./subinterface";
+import {
+  createSvi,
+  findSviForVlan,
+  isSvi,
+  parseVlanInterfaceName,
+  pickVlanEgressPort,
+  syncSviOperState,
+} from "./svi";
+import {
+  addNatPatRule as applyNatPatRule,
+  applyInboundNat,
+  applyOutboundNat,
+  formatNatTranslations,
+  setNatDirection,
+} from "./nat";
 import { executeCliLine, type CliSession } from "../cli/interpreter";
 
 export class SimulationController {
@@ -47,6 +97,17 @@ export class SimulationController {
     const built = buildTopology(spec, seed);
     this.devices = built.devices;
     this.links = built.links;
+    this.rebuildAllStpState();
+  }
+
+  private rebuildAllStpState(): void {
+    rebuildAllStp(this.devices, this.links);
+  }
+
+  getSpanningTreeText(deviceId: string): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device || device.type !== "switch") return null;
+    return formatSpanningTree(device, findStpRootId(this.devices, this.links));
   }
 
   /** Freeform: add a device with default interfaces. */
@@ -77,6 +138,7 @@ export class SimulationController {
     for (const l of toRemove) this.links.delete(l.id);
     this.devices.delete(deviceId);
     this.cliSessions.delete(deviceId);
+    this.rebuildAllStpState();
   }
 
   addLink(
@@ -116,6 +178,7 @@ export class SimulationController {
     this.links.set(id, link);
     aIface.operationalStatus = aIface.adminStatus === "up" ? "up" : "down";
     bIface.operationalStatus = bIface.adminStatus === "up" ? "up" : "down";
+    this.rebuildAllStpState();
     return structuredClone(link);
   }
 
@@ -128,6 +191,7 @@ export class SimulationController {
       const iface = dev?.interfaces.find((i) => i.id === ep.interfaceId);
       if (iface) iface.operationalStatus = "down";
     }
+    this.rebuildAllStpState();
   }
 
   setSwitchport(
@@ -262,10 +326,62 @@ export class SimulationController {
     }
     let session = this.cliSessions.get(deviceId);
     if (!session) {
-      session = { mode: "user", ifaceName: null };
+      session = { mode: "user", ifaceName: null, routerProcessId: null, dhcpPoolName: null };
       this.cliSessions.set(deviceId, session);
     }
     return executeCliLine(this, device, session, line);
+  }
+
+  /** Create or return a router subinterface (Gi0/0.10). */
+  ensureSubinterface(deviceId: string, ifaceName: string): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "router") return "Subinterfaces only on routers";
+    if (!parseSubinterfaceName(ifaceName)) return null;
+    const sub = createSubinterface(device, ifaceName);
+    if (!sub) return `% Invalid parent interface for ${ifaceName}`;
+    this.appendConfig(device, `interface ${ifaceName}`);
+    return null;
+  }
+
+  setSubinterfaceEncap(
+    deviceId: string,
+    ifaceName: string,
+    vlan: number,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    const iface = findIface(device, ifaceName);
+    if (!iface || !isSubinterface(iface)) {
+      return "Encapsulation only on subinterfaces";
+    }
+    if (vlan < 1 || vlan > 4094) return "Invalid VLAN ID";
+    iface.encapVlan = vlan;
+    syncSubinterfaceOperState(device, iface);
+    this.appendConfig(device, `interface ${iface.name}`);
+    this.appendConfig(device, ` encapsulation dot1Q ${vlan}`);
+    return null;
+  }
+
+  ensureSvi(deviceId: string, ifaceName: string): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "switch") return "SVIs only on switches";
+    const vlan = parseVlanInterfaceName(ifaceName);
+    if (!vlan) return null;
+    const svi = createSvi(device, ifaceName, this.seed);
+    if (!svi) return `% Invalid SVI ${ifaceName}`;
+    this.appendConfig(device, `interface ${svi.name}`);
+    return null;
+  }
+
+  setIpRouting(deviceId: string, enabled: boolean): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "switch") return "ip routing only on switches";
+    device.ipRouting = enabled;
+    this.appendConfig(device, enabled ? "ip routing" : "no ip routing");
+    return null;
   }
 
   /** Apply interface IP and rebuild connected routes. */
@@ -283,6 +399,7 @@ export class SimulationController {
     if (prefixLength < 0 || prefixLength > 32) return "Invalid prefix";
     iface.ipv4 = [{ address, prefixLength }];
     this.rebuildConnectedRoutes(device);
+    this.rebuildAllOspf();
     this.appendConfig(device, `interface ${iface.name}`);
     this.appendConfig(device, ` ip address ${address} ${prefixToMask(prefixLength)}`);
     return null;
@@ -298,21 +415,301 @@ export class SimulationController {
     const iface = findIface(device, ifaceName);
     if (!iface) return "Interface not found";
     iface.adminStatus = admin;
-    const peer = peerFor(this.links, device.id, iface.id);
-    iface.operationalStatus =
-      admin === "up" && peer && this.linkUp(peer.link) ? "up" : "down";
-    if (peer) {
-      const peerDev = this.devices.get(peer.peerDeviceId);
-      const peerIface = peerDev?.interfaces.find((i) => i.id === peer.peerIfaceId);
-      if (peerIface) {
-        peerIface.operationalStatus =
-          peerIface.adminStatus === "up" && admin === "up" && this.linkUp(peer.link)
-            ? "up"
-            : "down";
+    if (isSubinterface(iface)) {
+      syncSubinterfaceOperState(device, iface);
+    } else if (isSvi(iface)) {
+      syncSviOperState(iface);
+    } else {
+      const peer = peerFor(this.links, device.id, iface.id);
+      iface.operationalStatus =
+        admin === "up" && peer && this.linkUp(peer.link) ? "up" : "down";
+      if (peer) {
+        const peerDev = this.devices.get(peer.peerDeviceId);
+        const peerIface = peerDev?.interfaces.find((i) => i.id === peer.peerIfaceId);
+        if (peerIface) {
+          peerIface.operationalStatus =
+            peerIface.adminStatus === "up" && admin === "up" && this.linkUp(peer.link)
+              ? "up"
+              : "down";
+        }
       }
+      syncAllSubinterfaces(device);
     }
+    this.rebuildConnectedRoutes(device);
+    this.rebuildAllOspf();
     this.appendConfig(device, admin === "up" ? " no shutdown" : " shutdown");
     return null;
+  }
+
+  addOspfNetwork(
+    deviceId: string,
+    processId: number,
+    network: string,
+    wildcard: string,
+    area: number,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    const err = applyOspfNetwork(device, processId, network, wildcard, area);
+    if (err) return err;
+    this.appendConfig(
+      device,
+      `router ospf ${processId}\n network ${network} ${wildcard} area ${area}`,
+    );
+    this.rebuildAllOspf();
+    return null;
+  }
+
+  setOspfRouterId(deviceId: string, processId: number, routerId: string): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    const err = applyOspfRouterId(device, processId, routerId);
+    if (err) return err;
+    this.appendConfig(device, `router ospf ${processId}\n router-id ${routerId}`);
+    this.rebuildAllOspf();
+    return null;
+  }
+
+  ensureOspfProcess(deviceId: string, processId: number): void {
+    const device = this.devices.get(deviceId);
+    if (!device) return;
+    initOspfProcess(device, processId);
+  }
+
+  ensureDhcpPool(deviceId: string, poolName: string): void {
+    const device = this.devices.get(deviceId);
+    if (!device) return;
+    upsertDhcpPool(device, poolName);
+  }
+
+  configureDhcpPoolNetwork(
+    deviceId: string,
+    poolName: string,
+    network: string,
+    mask: string,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "router") return "DHCP pools only on routers";
+    const prefix = dhcpMaskToPrefix(mask);
+    if (prefix === null) return "Invalid mask";
+    const net = networkAddress(network, prefix);
+    if (!net) return "Invalid network";
+    const pool = upsertDhcpPool(device, poolName);
+    pool.network = net;
+    pool.prefixLength = prefix;
+    this.appendConfig(device, `ip dhcp pool ${poolName}`);
+    this.appendConfig(device, ` network ${net} ${mask}`);
+    return null;
+  }
+
+  configureDhcpPoolDefaultRouter(
+    deviceId: string,
+    poolName: string,
+    gateway: string,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (parseIpv4(gateway) === null) return "Invalid default-router";
+    const pool = device.dhcpPools?.find((p) => p.name === poolName);
+    if (!pool) return `% DHCP pool ${poolName} not found`;
+    pool.defaultRouter = gateway;
+    this.appendConfig(device, ` default-router ${gateway}`);
+    return null;
+  }
+
+  requestDhcpLease(deviceId: string, ifaceName: string): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "host" && device.type !== "server") {
+      return "DHCP client only on hosts";
+    }
+    const iface = findIface(device, ifaceName);
+    if (!iface) return "Interface not found";
+    if (iface.operationalStatus !== "up") return "Interface is down";
+
+    const offer = findDhcpOffer(device, iface.macAddress, this.devices, this.links);
+    if (!offer) return "% No DHCP offer received";
+
+    for (const tr of buildDhcpTraces(
+      device.id,
+      offer.router.id,
+      offer.ip,
+      this.t,
+      () => this.nextPacketId(),
+    )) {
+      this.traces.set(tr.packetId, tr);
+    }
+
+    iface.ipv4 = [{ address: offer.ip, prefixLength: offer.pool.prefixLength }];
+    this.rebuildConnectedRoutes(device);
+    this.setDefaultGateway(deviceId, offer.gateway);
+    this.appendConfig(device, `interface ${iface.name}`);
+    this.appendConfig(device, " ip address dhcp");
+    this.t += 4;
+    return null;
+  }
+
+  addStandardAclEntry(
+    deviceId: string,
+    listNum: number,
+    action: "permit" | "deny",
+    source: string,
+    wildcard: string,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "router") return "ACLs only on routers";
+    if (listNum < 1 || listNum > 99) return "Standard ACL number must be 1–99";
+    if (source !== "any" && parseIpv4(source) === null) return "Invalid source address";
+    if (parseIpv4(wildcard) === null) return "Invalid wildcard mask";
+    applyStandardAclEntry(device, listNum, action, source, wildcard);
+    this.appendConfig(device, `access-list ${listNum} ${action} ${source} ${wildcard}`);
+    return null;
+  }
+
+  addExtendedAclEntry(
+    deviceId: string,
+    listNum: number,
+    action: "permit" | "deny",
+    protocol: "ip" | "icmp" | "tcp" | "udp",
+    source: string,
+    sourceWildcard: string,
+    dest: string,
+    destWildcard: string,
+    sourcePortEq?: number,
+    destPortEq?: number,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "router") return "ACLs only on routers";
+    if (listNum < 100 || listNum > 199) return "Extended ACL number must be 100–199";
+    if (source !== "any" && parseIpv4(source) === null) return "Invalid source address";
+    if (dest !== "any" && parseIpv4(dest) === null) return "Invalid destination address";
+    if (parseIpv4(sourceWildcard) === null || parseIpv4(destWildcard) === null) {
+      return "Invalid wildcard mask";
+    }
+    applyExtendedAclEntry(
+      device,
+      listNum,
+      action,
+      protocol,
+      source,
+      sourceWildcard,
+      dest,
+      destWildcard,
+      sourcePortEq,
+      destPortEq,
+    );
+    const srcPortText =
+      sourcePortEq !== undefined ? ` eq ${sourcePortEq}` : "";
+    const dstPortText = destPortEq !== undefined ? ` eq ${destPortEq}` : "";
+    this.appendConfig(
+      device,
+      `access-list ${listNum} ${action} ${protocol} ${source} ${sourceWildcard}${srcPortText} ${dest} ${destWildcard}${dstPortText}`,
+    );
+    return null;
+  }
+
+  setAccessGroup(
+    deviceId: string,
+    ifaceName: string,
+    listNum: number,
+    direction: "in" | "out",
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "router") return "ACLs only on routers";
+    const iface = findIface(device, ifaceName);
+    if (!iface) return "Interface not found";
+    if (!findAccessList(device, listNum)) {
+      return `% Access list ${listNum} does not exist`;
+    }
+    if (direction === "in") {
+      iface.accessGroupIn = listNum;
+    } else {
+      iface.accessGroupOut = listNum;
+    }
+    this.appendConfig(device, `interface ${iface.name}`);
+    this.appendConfig(device, ` ip access-group ${listNum} ${direction}`);
+    return null;
+  }
+
+  setNatDirection(
+    deviceId: string,
+    ifaceName: string,
+    direction: "inside" | "outside" | null,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "router") return "NAT only on routers";
+    const iface = findIface(device, ifaceName);
+    if (!iface) return "Interface not found";
+    setNatDirection(iface, direction);
+    this.appendConfig(device, `interface ${iface.name}`);
+    if (direction === "inside") {
+      this.appendConfig(device, " ip nat inside");
+    } else if (direction === "outside") {
+      this.appendConfig(device, " ip nat outside");
+    }
+    return null;
+  }
+
+  addNatInsideSourcePat(
+    deviceId: string,
+    aclNumber: number,
+    outsideIfaceName: string,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    const err = applyNatPatRule(device, aclNumber, outsideIfaceName);
+    if (err) return err;
+    this.appendConfig(
+      device,
+      `ip nat inside source list ${aclNumber} interface ${outsideIfaceName} overload`,
+    );
+    return null;
+  }
+
+  getNatTranslationsText(deviceId: string): string {
+    const device = this.devices.get(deviceId);
+    if (!device) return "";
+    return formatNatTranslations(device);
+  }
+
+  getAccessListsText(deviceId: string): string {
+    const device = this.devices.get(deviceId);
+    if (!device) return "";
+    return formatAccessLists(device) || "No access lists configured";
+  }
+
+  private aclPermits(
+    device: NetworkDevice,
+    iface: NetworkInterface,
+    direction: "in" | "out",
+    packet: Packet,
+  ): boolean {
+    const ipv4 = packet.layers.ipv4;
+    if (!ipv4) return true;
+    const listNum =
+      direction === "in" ? iface.accessGroupIn : iface.accessGroupOut;
+    if (!listNum) return true;
+    const list = findAccessList(device, listNum);
+    if (!list) return true;
+    const transport = packet.layers.tcp ?? packet.layers.udp;
+    return (
+      evaluateAccessList(list, {
+        srcIp: ipv4.src,
+        dstIp: ipv4.dst,
+        protocol: ipv4.protocol,
+        srcPort: transport?.srcPort,
+        dstPort: transport?.dstPort,
+      }) === "permit"
+    );
+  }
+
+  private rebuildAllOspf(): void {
+    rebuildAllOspfRoutes(this.devices, this.links);
   }
 
   setHostname(deviceId: string, name: string): void {
@@ -321,6 +718,84 @@ export class SimulationController {
     device.hostname = name;
     device.name = name;
     this.appendConfig(device, `hostname ${name}`);
+  }
+
+  /** Add or replace a static route (routers). */
+  addStaticRoute(
+    deviceId: string,
+    network: string,
+    prefixLength: number,
+    nextHop: string,
+  ): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "router") return "Static routes only on routers";
+    if (parseIpv4(network) === null || parseIpv4(nextHop) === null) {
+      return "Invalid IPv4 address";
+    }
+    if (prefixLength < 0 || prefixLength > 32) return "Invalid prefix";
+
+    const net = networkAddress(network, prefixLength);
+    if (!net) return "Invalid network";
+
+    const nhRoute = this.longestMatch(device, nextHop);
+    if (!nhRoute) {
+      return `% No route to next-hop ${nextHop}`;
+    }
+
+    device.runtime.routingTable = device.runtime.routingTable.filter(
+      (r) =>
+        !(
+          r.kind === "static" &&
+          r.network === net &&
+          r.prefixLength === prefixLength
+        ),
+    );
+    device.runtime.routingTable.push({
+      network: net,
+      prefixLength,
+      nextHop,
+      ifaceId: nhRoute.ifaceId,
+      metric: 1,
+      kind: "static",
+    });
+    this.appendConfig(
+      device,
+      `ip route ${net} ${prefixToMask(prefixLength)} ${nextHop}`,
+    );
+    return null;
+  }
+
+  /** Default gateway for hosts/servers (modeled as 0.0.0.0/0 static route). */
+  setDefaultGateway(deviceId: string, gatewayIp: string): string | null {
+    const device = this.devices.get(deviceId);
+    if (!device) return "Device not found";
+    if (device.type !== "host" && device.type !== "server") {
+      return "Default gateway only on hosts";
+    }
+    if (parseIpv4(gatewayIp) === null) return "Invalid IPv4 address";
+
+    const iface = device.interfaces.find((i) => i.ipv4.length > 0);
+    if (!iface) return "Configure an IP address first";
+
+    device.runtime.routingTable = device.runtime.routingTable.filter(
+      (r) =>
+        !(
+          r.kind === "static" &&
+          r.network === "0.0.0.0" &&
+          r.prefixLength === 0
+        ),
+    );
+    device.runtime.routingTable.push({
+      network: "0.0.0.0",
+      prefixLength: 0,
+      nextHop: gatewayIp,
+      ifaceId: iface.id,
+      metric: 1,
+      kind: "static",
+    });
+    this.appendConfig(device, `ip default-gateway ${gatewayIp}`);
+    return null;
   }
 
   /**
@@ -365,14 +840,95 @@ export class SimulationController {
 
     const successCount = results.filter(Boolean).length;
     const success = successCount === count;
+    const newTraces = this.getTraces().slice(beforeTraces);
+    const pathLines = summarizePingPath(newTraces);
     const output = success
-      ? `Ping to ${destIp}: ${successCount}/${count} success`
-      : `Ping to ${destIp}: ${successCount}/${count} success — destination unreachable or timed out`;
+      ? `Ping to ${destIp}: ${successCount}/${count} success${pathLines}`
+      : `Ping to ${destIp}: ${successCount}/${count} success — destination unreachable or timed out${pathLines}`;
+
+    this.lastEvents.push({
+      id: this.nextEventId(),
+      t: this.t,
+      type: "PING_RESULT",
+      deviceId: fromDeviceId,
+      data: { destIp, success, successCount, count },
+    });
+    if (this.lastEvents.length > 500) this.lastEvents.shift();
 
     return {
       success,
       output,
       events: allEvents,
+      traces: newTraces,
+    };
+  }
+
+  /**
+   * Send a single TCP or UDP segment toward destIp and run the DES.
+   * Success means the segment was delivered to the destination host (not ACL-dropped).
+   */
+  probe(
+    fromDeviceId: string,
+    destIp: string,
+    opts: {
+      protocol: "tcp" | "udp";
+      dstPort: number;
+      srcPort?: number;
+    },
+  ): { success: boolean; output: string; traces: PacketTrace[] } {
+    const device = this.devices.get(fromDeviceId);
+    if (!device) {
+      return {
+        success: false,
+        output: `% Device ${fromDeviceId} not found`,
+        traces: [],
+      };
+    }
+    const outIface = this.pickEgressInterface(device, destIp);
+    if (!outIface?.ipv4[0]?.address) {
+      return {
+        success: false,
+        output: `% No route to host ${destIp}`,
+        traces: [],
+      };
+    }
+    const srcIp = outIface.ipv4[0].address;
+    const srcPort = opts.srcPort ?? 49152;
+    const ipProto = opts.protocol === "tcp" ? 6 : 17;
+    const beforeTraces = this.traces.size;
+    const packetId = this.nextPacketId();
+    const transport = { srcPort, dstPort: opts.dstPort };
+    const packet: Packet = {
+      id: packetId,
+      createdAt: this.t,
+      layers: {
+        ipv4: { src: srcIp, dst: destIp, ttl: 64, protocol: ipProto },
+        ...(opts.protocol === "tcp" ? { tcp: transport } : { udp: transport }),
+      },
+      meta: { hopDeviceIds: [] },
+    };
+    const label = opts.protocol.toUpperCase();
+    this.ensureTrace(
+      packet,
+      label,
+      `${label} ${srcIp}:${srcPort} → ${destIp}:${opts.dstPort}`,
+    );
+    this.noteHop(packet, device.id, `originate ${label} segment`);
+    this.l3Send(device, outIface, packet);
+    this.runUntilIdle();
+
+    const tr = this.traces.get(packetId);
+    const success = tr?.outcome === "delivered";
+    const droppedAcl = tr?.hops.some((h) => h.action.includes("ACL deny")) ?? false;
+    const output = success
+      ? `${label} probe to ${destIp}:${opts.dstPort} succeeded`
+      : droppedAcl
+        ? `${label} probe to ${destIp}:${opts.dstPort} denied by ACL`
+        : `${label} probe to ${destIp}:${opts.dstPort} failed`;
+
+    return {
+      success,
+      output,
       traces: this.getTraces().slice(beforeTraces),
     };
   }
@@ -481,6 +1037,15 @@ export class SimulationController {
     tr.hops.push({ t: this.t, deviceId, action });
     packet.meta.hopDeviceIds = packet.meta.hopDeviceIds ?? [];
     packet.meta.hopDeviceIds.push(deviceId);
+    this.lastEvents.push({
+      id: this.nextEventId(),
+      t: this.t,
+      type: "LINK_TRANSMIT",
+      deviceId,
+      packetId: packet.id,
+      data: { action, protocol: tr.protocol, summary: tr.summary },
+    });
+    if (this.lastEvents.length > 500) this.lastEvents.shift();
   }
 
   private sendEchoRequest(
@@ -572,22 +1137,17 @@ export class SimulationController {
     device: NetworkDevice,
     destIp: string,
   ): NetworkInterface | null {
-    // Longest-prefix match
-    let best: RouteEntry | null = null;
-    for (const route of device.runtime.routingTable) {
-      if (!ipv4InSubnet(destIp, route.network, route.prefixLength)) continue;
-      if (!best || route.prefixLength > best.prefixLength) best = route;
+    const route = this.longestMatch(device, destIp);
+    if (route) {
+      return device.interfaces.find((i) => i.id === route.ifaceId) ?? null;
     }
-    if (best) {
-      return device.interfaces.find((i) => i.id === best!.ifaceId) ?? null;
-    }
-    // Hosts: use first iface with IP if dest on-link
+    // On-link without explicit route (hosts)
     for (const iface of device.interfaces) {
       for (const ip of iface.ipv4) {
         if (ipv4InSubnet(destIp, ip.address, ip.prefixLength)) return iface;
       }
     }
-    return device.interfaces.find((i) => i.ipv4.length > 0) ?? null;
+    return null;
   }
 
   /** L3 → resolve ARP → L2 transmit */
@@ -628,7 +1188,17 @@ export class SimulationController {
     let best: RouteEntry | null = null;
     for (const route of device.runtime.routingTable) {
       if (!ipv4InSubnet(destIp, route.network, route.prefixLength)) continue;
-      if (!best || route.prefixLength > best.prefixLength) best = route;
+      if (!best) {
+        best = route;
+        continue;
+      }
+      if (route.prefixLength > best.prefixLength) {
+        best = route;
+        continue;
+      }
+      if (route.prefixLength === best.prefixLength && route.metric < best.metric) {
+        best = route;
+      }
     }
     return best;
   }
@@ -672,29 +1242,92 @@ export class SimulationController {
     this.transmit(device, iface, packet);
   }
 
+  private resolveL3EgressPort(
+    device: NetworkDevice,
+    iface: NetworkInterface,
+  ): NetworkInterface | null {
+    if (iface.sviVlan != null) {
+      return pickVlanEgressPort(device, iface.sviVlan) ?? null;
+    }
+    return getPhysicalInterface(device, iface);
+  }
+
   private transmit(
     device: NetworkDevice,
     iface: NetworkInterface,
     packet: Packet,
   ): void {
-    if (iface.operationalStatus !== "up") {
+    if (iface.sviVlan != null) {
+      packet.meta.vlanId = iface.sviVlan;
+    }
+    const physical = this.resolveL3EgressPort(device, iface);
+    if (!physical) {
+      packet.meta.dropReason = "no vlan egress port";
+      const tr = this.traces.get(packet.id);
+      if (tr) tr.outcome = "dropped";
+      return;
+    }
+    if (iface.encapVlan != null && device.type === "router") {
+      packet.meta.vlanId = iface.encapVlan;
+    }
+    if (physical.operationalStatus !== "up") {
       packet.meta.dropReason = "interface down";
       const tr = this.traces.get(packet.id);
       if (tr) tr.outcome = "dropped";
-      iface.counters.drops++;
+      physical.counters.drops++;
       return;
     }
-    const peer = peerFor(this.links, device.id, iface.id);
+    const peer = peerFor(this.links, device.id, physical.id);
     if (!peer) {
       packet.meta.dropReason = "no link";
       const tr = this.traces.get(packet.id);
       if (tr) tr.outcome = "dropped";
       return;
     }
-    iface.counters.outPackets++;
+    physical.counters.outPackets++;
     packet.meta.egressIface = iface.id;
+    this.applyPeerSwitchEgressVlan(device, physical, packet, peer);
     const delay = peer.link.latencyMs;
     this.scheduleArrive(this.t + delay, peer.peerDeviceId, peer.peerIfaceId, packet);
+  }
+
+  /** Tag frames for switch trunk peers when L3 devices reply on a VLAN context. */
+  private applyPeerSwitchEgressVlan(
+    device: NetworkDevice,
+    iface: NetworkInterface,
+    packet: Packet,
+    peer: { peerDeviceId: string; peerIfaceId: string },
+  ): void {
+    if (device.type === "switch") return;
+    const peerDev = this.devices.get(peer.peerDeviceId);
+    if (!peerDev || peerDev.type !== "switch") return;
+    const peerIface = peerDev.interfaces.find((i) => i.id === peer.peerIfaceId);
+    const sp = peerIface?.switchport;
+    if (!sp || sp.mode !== "trunk") return;
+
+    const vlanId = packet.meta.vlanId ?? packet.layers.vlan?.vlanId;
+    if (!vlanId) return;
+
+    if (vlanId === sp.nativeVlan) {
+      delete packet.layers.vlan;
+    } else if (sp.allowedVlans.includes(vlanId)) {
+      packet.layers.vlan = {
+        vlanId,
+        ethertype: packet.layers.eth?.ethertype ?? ETHertype.IPV4,
+      };
+    }
+  }
+
+  /** Strip 802.1Q on L3 devices; remember VLAN for symmetric trunk replies. */
+  private absorbIngressVlan(
+    device: NetworkDevice,
+    packet: Packet,
+  ): void {
+    if (device.type === "switch") return;
+    if (packet.layers.vlan) {
+      packet.meta.vlanId = packet.layers.vlan.vlanId;
+      delete packet.layers.vlan;
+    }
   }
 
   private dispatch(ev: SimulationEvent): void {
@@ -728,8 +1361,55 @@ export class SimulationController {
     }
 
     if (device.type === "switch") {
+      const eth = packet.layers.eth!;
+      const ingressVlan = this.resolveIngressVlan(iface, packet);
+      if (ingressVlan !== null) {
+        if (!isStpBlocked(iface)) {
+          const existing = device.runtime.macTable.find(
+            (m) => macEqual(m.mac, eth.srcMac) && m.vlan === ingressVlan,
+          );
+          if (existing) {
+            existing.ifaceId = iface.id;
+            existing.ageSimTime = this.t;
+          } else {
+            device.runtime.macTable.push({
+              mac: eth.srcMac,
+              ifaceId: iface.id,
+              vlan: ingressVlan,
+              ageSimTime: this.t,
+            });
+          }
+        }
+
+        if (device.ipRouting) {
+          const svi = findSviForVlan(device, ingressVlan);
+          if (svi && svi.operationalStatus === "up") {
+            const forUs =
+              isBroadcastMac(eth.dstMac) || macEqual(eth.dstMac, svi.macAddress);
+            if (forUs) {
+              packet.meta.vlanId = ingressVlan;
+              if (eth.ethertype === ETHertype.ARP && packet.layers.arp) {
+                this.handleArp(device, svi, packet);
+                return;
+              }
+              if (eth.ethertype === ETHertype.IPV4 && packet.layers.ipv4) {
+                this.handleIpv4(device, svi, packet);
+                return;
+              }
+            }
+          }
+        }
+      }
       this.switchForward(device, iface, packet);
       return;
+    }
+
+    this.absorbIngressVlan(device, packet);
+
+    let logicalIface = iface;
+    if (device.type === "router" && packet.meta.vlanId != null) {
+      const sub = findSubinterfaceForVlan(device, iface, packet.meta.vlanId);
+      if (sub) logicalIface = sub;
     }
 
     // Router / host: accept if dst MAC is ours or broadcast
@@ -744,12 +1424,12 @@ export class SimulationController {
     }
 
     if (eth.ethertype === ETHertype.ARP && packet.layers.arp) {
-      this.handleArp(device, iface, packet);
+      this.handleArp(device, logicalIface, packet);
       return;
     }
 
     if (eth.ethertype === ETHertype.IPV4 && packet.layers.ipv4) {
-      this.handleIpv4(device, iface, packet);
+      this.handleIpv4(device, logicalIface, packet);
       return;
     }
   }
@@ -759,6 +1439,14 @@ export class SimulationController {
     inIface: NetworkInterface,
     packet: Packet,
   ): void {
+    if (isStpBlocked(inIface)) {
+      packet.meta.dropReason = "STP blocking ingress";
+      const tr = this.traces.get(packet.id);
+      if (tr) tr.outcome = "dropped";
+      this.noteHop(packet, device.id, `STP blocked on ${inIface.name}`);
+      return;
+    }
+
     const eth = packet.layers.eth!;
     const ingressVlan = this.resolveIngressVlan(inIface, packet);
     if (ingressVlan === null) {
@@ -796,13 +1484,20 @@ export class SimulationController {
     }
 
     const isBcast = isBroadcastMac(eth.dstMac);
-    const known = device.runtime.macTable.find(
+    let known = device.runtime.macTable.find(
       (m) => macEqual(m.mac, eth.dstMac) && m.vlan === ingressVlan,
     );
+    if (known) {
+      const knownIface = device.interfaces.find((i) => i.id === known!.ifaceId);
+      if (!knownIface || isStpBlocked(knownIface)) {
+        known = undefined;
+      }
+    }
 
     const egressIfaces = device.interfaces.filter((i) => {
       if (i.id === inIface.id) return false;
       if (i.operationalStatus !== "up") return false;
+      if (isStpBlocked(i)) return false;
       if (!this.vlanAllowedOnEgress(i, ingressVlan)) return false;
       if (isBcast || !known) return true;
       return i.id === known.ifaceId;
@@ -910,6 +1605,8 @@ export class SimulationController {
     }
 
     if (arp.op === "request" && this.deviceOwnsIp(device, arp.targetIp)) {
+      const owner =
+        findInterfaceOwningIp(device, arp.targetIp) ?? iface;
       const reply: Packet = {
         id: this.nextPacketId(),
         createdAt: this.t,
@@ -921,17 +1618,17 @@ export class SimulationController {
           },
           arp: {
             op: "reply",
-            senderMac: iface.macAddress,
+            senderMac: owner.macAddress,
             senderIp: arp.targetIp,
             targetMac: arp.senderMac,
             targetIp: arp.senderIp,
           },
         },
-        meta: {},
+        meta: packet.meta.vlanId ? { vlanId: packet.meta.vlanId } : {},
       };
-      this.ensureTrace(reply, "ARP", `${arp.targetIp} is-at ${iface.macAddress}`);
+      this.ensureTrace(reply, "ARP", `${arp.targetIp} is-at ${owner.macAddress}`);
       this.noteHop(reply, device.id, "arp-reply");
-      this.transmit(device, iface, reply);
+      this.transmit(device, owner, reply);
     }
 
     if (arp.op === "reply") {
@@ -941,6 +1638,9 @@ export class SimulationController {
         for (const pid of pending) {
           const waiting = this.packets.get(pid);
           if (!waiting?.layers.ipv4) continue;
+          if (packet.meta.vlanId) {
+            waiting.meta.vlanId = packet.meta.vlanId;
+          }
           const outIface =
             device.interfaces.find((i) => i.id === iface.id) ??
             this.pickEgressInterface(device, waiting.layers.ipv4.dst);
@@ -964,20 +1664,39 @@ export class SimulationController {
     const ipv4 = packet.layers.ipv4!;
     this.noteHop(packet, device.id, `ipv4 ${ipv4.src}→${ipv4.dst}`);
 
+    if (!this.aclPermits(device, iface, "in", packet)) {
+      packet.meta.dropReason = "ACL deny";
+      const tr = this.traces.get(packet.id);
+      if (tr) tr.outcome = "dropped";
+      this.noteHop(packet, device.id, `ACL deny ingress on ${iface.name}`);
+      return;
+    }
+
+    const natInbound = applyInboundNat(device, iface, packet, this.t);
+    if (natInbound) {
+      this.noteHop(packet, device.id, "NAT reverse");
+    }
+
     if (this.deviceOwnsIp(device, ipv4.dst)) {
       this.deliverLocal(device, packet);
       return;
     }
 
-    // Hosts don't forward
+    // Hosts don't forward; switches need ip routing
     if (device.type === "host" || device.type === "server") {
       packet.meta.dropReason = "host not destined";
       const tr = this.traces.get(packet.id);
       if (tr) tr.outcome = "dropped";
       return;
     }
+    if (device.type === "switch" && !device.ipRouting) {
+      packet.meta.dropReason = "switch not routing";
+      const tr = this.traces.get(packet.id);
+      if (tr) tr.outcome = "dropped";
+      return;
+    }
 
-    // Router forward
+    // Router / L3 switch forward
     if (ipv4.ttl <= 1) {
       packet.meta.dropReason = "TTL exceeded";
       const tr = this.traces.get(packet.id);
@@ -996,6 +1715,19 @@ export class SimulationController {
       if (tr) tr.outcome = "dropped";
       return;
     }
+
+    if (!this.aclPermits(device, outIface, "out", packet)) {
+      packet.meta.dropReason = "ACL deny";
+      const tr = this.traces.get(packet.id);
+      if (tr) tr.outcome = "dropped";
+      this.noteHop(packet, device.id, `ACL deny egress on ${outIface.name}`);
+      return;
+    }
+
+    if (applyOutboundNat(device, iface, outIface, packet, this.t)) {
+      this.noteHop(packet, device.id, "NAT overload");
+    }
+
     // Clear eth for re-ARP on egress
     delete packet.layers.eth;
     this.l3Send(device, outIface, packet);
@@ -1034,7 +1766,7 @@ export class SimulationController {
             data: icmp.data,
           },
         },
-        meta: {},
+        meta: packet.meta.vlanId ? { vlanId: packet.meta.vlanId } : {},
       };
       this.ensureTrace(
         reply,
@@ -1085,6 +1817,25 @@ export function prefixToMask(prefix: number): string {
     (mask >>> 8) & 255,
     mask & 255,
   ].join(".");
+}
+
+function summarizePingPath(traces: PacketTrace[]): string {
+  const icmp = traces.find((t) => t.protocol === "ICMP" && t.summary.includes("echo-request"));
+  if (!icmp?.hops.length) return "";
+  const steps = icmp.hops.map((h) => `${h.deviceId}: ${h.action}`);
+  const arp = traces.find((t) => t.protocol === "ARP" && t.summary.includes("who-has"));
+  if (arp?.hops.length) {
+    steps.unshift(...arp.hops.map((h) => `${h.deviceId}: ${h.action}`));
+  }
+  const reply = traces.find(
+    (t) => t.protocol === "ICMP" && t.summary.includes("echo-reply") && t.outcome === "delivered",
+  );
+  if (reply?.hops.length) {
+    steps.push(...reply.hops.map((h) => `${h.deviceId}: ${h.action}`));
+  }
+  const unique = [...new Set(steps)];
+  if (!unique.length) return "";
+  return `\n  Path: ${unique.join(" → ")}`;
 }
 
 export function maskToPrefix(mask: string): number | null {

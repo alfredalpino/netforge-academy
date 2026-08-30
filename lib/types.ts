@@ -122,7 +122,8 @@ export interface ProgressState {
   notes: Record<string, string>;
   currentModuleId: string;
   completedTours: string[];
-  focusChecklists: Record<string, boolean>;
+  /** Browser simulator labs passed at ≥ pass score */
+  completedSimulatorLabs: string[];
   lastBackupDate: string;
 }
 
@@ -144,6 +145,6 @@ export const DEFAULT_PROGRESS: ProgressState = {
   notes: {},
   currentModuleId: "m0-foundation",
   completedTours: [],
-  focusChecklists: {},
+  completedSimulatorLabs: [],
   lastBackupDate: "",
 };

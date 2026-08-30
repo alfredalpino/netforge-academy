@@ -46,7 +46,10 @@ export default async function PhasePage({
         <p className="text-sm text-muted">
           Mark modules complete when you meet all exit criteria. Toggle again to undo.
         </p>
-        <Link href="/today" className="mt-3 inline-block text-sm text-accent hover:underline">
+        <Link href="/topics" className="mt-3 inline-block text-sm text-accent hover:underline">
+          Browse topic explanation videos →
+        </Link>
+        <Link href="/today" className="mt-2 block text-sm text-accent hover:underline">
           Go to today&apos;s plan →
         </Link>
       </Card>

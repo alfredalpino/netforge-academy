@@ -27,7 +27,7 @@ export const TOURS: TourDefinition[] = [
         id: "welcome-sidebar",
         target: "[data-tour='sidebar']",
         title: "Navigation",
-        body: "Every section lives here. Dashboard, Today, Focus Mode, Curriculum, Resources, and more.",
+        body: "Every section lives here. Dashboard, Today, Curriculum, Resources, and more.",
         placement: "right",
       },
       {
@@ -48,7 +48,7 @@ export const TOURS: TourDefinition[] = [
         id: "welcome-actions",
         target: "[data-tour='quick-actions']",
         title: "Daily Workflow",
-        body: "Start Focus Mode for distraction-free study, open Today's plan, or check in for accountability.",
+        body: "Open Today's plan, run drills, or check in for accountability.",
         placement: "top",
       },
       {
@@ -57,33 +57,6 @@ export const TOURS: TourDefinition[] = [
         title: "How to Use",
         body: "Short guide with every detail you need. Replay this tour anytime from the ? button.",
         placement: "right",
-      },
-    ],
-  },
-  {
-    id: "focus",
-    name: "Focus Mode Tour",
-    steps: [
-      {
-        id: "focus-setup",
-        target: "[data-tour='focus-timer']",
-        title: "Start Your Session",
-        body: "Pick a Pomodoro preset (25/5, 50/10, or custom), then hit Start. Timer moves to a draggable bubble and your tab title.",
-        placement: "bottom",
-      },
-      {
-        id: "focus-study",
-        target: "[data-tour='focus-study']",
-        title: "Study Material",
-        body: "Today's theory, config, lab, and recall — everything you need to learn is right here. Check items off as you go.",
-        placement: "top",
-      },
-      {
-        id: "focus-blocks",
-        target: "[data-tour='focus-blocks']",
-        title: "Study Blocks",
-        body: "Switch between Deep Theory, Configuration, Lab, Break/Fix, and Recall. Mark each block complete when done.",
-        placement: "bottom",
       },
     ],
   },

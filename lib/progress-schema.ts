@@ -33,7 +33,7 @@ export const progressStateSchema = z.object({
   notes: z.record(z.string(), z.string().max(5000)),
   currentModuleId: z.string(),
   completedTours: z.array(z.string()),
-  focusChecklists: z.record(z.string(), z.boolean()).optional(),
+  completedSimulatorLabs: z.array(z.string()).optional(),
   lastBackupDate: z.string().optional(),
 });
 
@@ -49,8 +49,8 @@ export function parseStoredProgress(raw: string | null) {
     return {
       ...DEFAULT_PROGRESS,
       ...parsed.data,
-      focusChecklists: parsed.data.focusChecklists ?? {},
       lastBackupDate: parsed.data.lastBackupDate ?? "",
+      completedSimulatorLabs: parsed.data.completedSimulatorLabs ?? [],
       drillStats: {
         ...DEFAULT_PROGRESS.drillStats,
         ...parsed.data.drillStats,
@@ -71,8 +71,8 @@ export function validateProgressImport(data: unknown) {
     data: {
       ...DEFAULT_PROGRESS,
       ...parsed.data,
-      focusChecklists: parsed.data.focusChecklists ?? {},
       lastBackupDate: parsed.data.lastBackupDate ?? "",
+      completedSimulatorLabs: parsed.data.completedSimulatorLabs ?? [],
       drillStats: {
         ...DEFAULT_PROGRESS.drillStats,
         ...parsed.data.drillStats,

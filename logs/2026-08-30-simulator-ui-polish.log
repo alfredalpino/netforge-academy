@@ -1,0 +1,33 @@
+# Simulator UI polish — 2026-08-30
+
+## Actions
+- Resized device nodes to compact containerlab-style tiles (64×72 default) with icon + label below.
+- Added NodeResizer on selected nodes; sizes persist in simulator store (`width`/`height` on layouts).
+- Fixed canvas zoom: removed always-on `fitView`; one-time fit on lab load capped at 1× zoom.
+- Added collapsible Academy sidebar via `NavLayoutContext` (56px collapsed / 240px expanded).
+- Sidebar chevron + simulator top-bar toggle; preference stored in `sessionStorage`.
+- Auto-collapses nav on first visit to `/simulator` when no saved preference.
+- Device palette now shows licensed containerlab icons.
+- Fixed terminal double-prompt bug (prompt only after command output, not on every lines sync).
+
+## Files touched
+- `components/NavLayoutContext.tsx` (new)
+- `components/AppProviders.tsx`
+- `components/Sidebar.tsx`
+- `features/simulator/canvas/DeviceNode.tsx`
+- `features/simulator/canvas/TopologyCanvas.tsx`
+- `features/simulator/store/simulatorStore.ts`
+- `features/simulator/shell/SimulatorShell.tsx`
+- `features/simulator/chrome/SimTopBar.tsx`
+- `features/simulator/dock/TerminalPane.tsx`
+- `features/simulator/palette/DevicePalette.tsx`
+- `app/globals.css`
+
+## Follow-up — ChatGPT-style sidebar toggle
+- Removed hamburger / Menu text controls from simulator top bar and mobile header.
+- Added `components/SidebarToggle.tsx` with panel-left icon + hover tooltips ("Open sidebar" / "Close sidebar").
+- Collapsed nav now fully hides (width 0); reopen via floating panel toggle (desktop) or mobile header control.
+- Expanded sidebar header: NetForge wordmark + panel close toggle (matches ChatGPT layout).
+
+## Validation
+- `npm run validate` — pass (lint, typecheck, 29 tests, build)

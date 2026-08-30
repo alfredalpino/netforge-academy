@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono, Syne } from "next/font/google";
 import { Sidebar, MainContent } from "@/components/Sidebar";
 import { AppProviders } from "@/components/AppProviders";
@@ -50,8 +51,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} h-full antialiased`}
     >
+      <head>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem("netforge-theme");if(t==="light"){document.documentElement.dataset.theme="light";document.documentElement.style.colorScheme="light";}}catch(e){}})();`}
+        </Script>
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <a
           href="#main-content"

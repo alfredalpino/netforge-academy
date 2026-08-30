@@ -30,6 +30,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [{ source: "/focus", destination: "/today", permanent: true }];
+  },
   async headers() {
     return [
       {

@@ -1,14 +1,25 @@
 "use client";
 
-import { memo } from "react";
-import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
+import { memo, useCallback } from "react";
+import {
+  Handle,
+  NodeResizer,
+  Position,
+  type NodeProps,
+  type Node,
+} from "@xyflow/react";
 import type { DeviceType } from "@/simulation/core/types";
+import { useSimulatorStore } from "@/features/simulator/store/simulatorStore";
+
+export const DEFAULT_NODE_WIDTH = 64;
+export const DEFAULT_NODE_HEIGHT = 72;
 
 export type DeviceNodeData = {
   label: string;
   deviceType: DeviceType;
-  selected?: boolean;
   hopping?: boolean;
+  width: number;
+  height: number;
 };
 
 export type DeviceFlowNode = Node<DeviceNodeData, "device">;
@@ -20,48 +31,64 @@ const ICON: Record<DeviceType, string> = {
   server: "/simulator/icons/server.svg",
 };
 
-const ROLE: Record<DeviceType, string> = {
-  router: "Router · NetForgeOS",
-  switch: "Switch · L2",
-  host: "Host · End station",
-  server: "Server · End station",
-};
+function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceFlowNode>) {
+  const patchNodeLayout = useSimulatorStore((s) => s.patchNodeLayout);
 
-function DeviceNodeComponent({ data, selected }: NodeProps<DeviceFlowNode>) {
+  const onResizeEnd = useCallback(
+    (_event: unknown, params: { width: number; height: number }) => {
+      patchNodeLayout(id, { width: params.width, height: params.height });
+    },
+    [id, patchNodeLayout],
+  );
+
+  const iconSize = Math.round(Math.min(data.width, data.height) * 0.52);
+
   return (
     <div
-      className={`flex w-[108px] flex-col items-center rounded-xl border bg-surface-elevated/95 px-2 py-2 shadow-sm transition ${
+      data-testid={`device-node-${id}`}
+      className={`sim-device-node relative flex flex-col items-center justify-center rounded-lg border bg-[#0c1219]/95 shadow-sm transition ${
         selected
-          ? "border-accent ring-2 ring-accent/40"
+          ? "border-accent ring-1 ring-accent/50"
           : data.hopping
             ? "border-success/70"
-            : "border-border"
+            : "border-[color:var(--sim-grid)]"
       }`}
+      style={{ width: data.width, height: data.height }}
     >
+      <NodeResizer
+        minWidth={48}
+        minHeight={48}
+        maxWidth={128}
+        maxHeight={120}
+        isVisible={selected}
+        lineClassName="!border-accent/70"
+        handleClassName="!h-1.5 !w-1.5 !rounded-sm !border !border-accent/80 !bg-accent"
+        onResizeEnd={onResizeEnd}
+      />
       <Handle
         type="target"
         position={Position.Left}
-        className="!h-2.5 !w-2.5 !border-border !bg-[color:var(--sim-link)]"
+        className="!-left-1 !h-2 !w-2 !border-border !bg-[color:var(--sim-link)]"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!h-2.5 !w-2.5 !border-border !bg-[color:var(--sim-link)]"
+        className="!-right-1 !h-2 !w-2 !border-border !bg-[color:var(--sim-link)]"
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={ICON[data.deviceType]}
         alt=""
-        width={44}
-        height={44}
-        className="rounded-md"
+        width={iconSize}
+        height={iconSize}
+        className="pointer-events-none select-none object-contain"
         draggable={false}
       />
-      <p className="mt-1 truncate text-center text-xs font-semibold text-foreground">
+      <p
+        className="pointer-events-none absolute -bottom-5 left-1/2 max-w-[120px] -translate-x-1/2 truncate text-center text-[0.625rem] font-medium text-foreground"
+        title={data.label}
+      >
         {data.label}
-      </p>
-      <p className="truncate text-center text-[0.6rem] text-muted">
-        {ROLE[data.deviceType]}
       </p>
     </div>
   );

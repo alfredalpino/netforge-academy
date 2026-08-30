@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { getWeekProgress, getCalendarWeekCheckIns } from "@/lib/progress";
 import type { ProgressState } from "@/lib/types";
 import { getWeekPhase } from "@/lib/schedule";
+import { LAB_LIST } from "@/content/labs";
 
 const SUNDAY_ACTIONS = [
   "Review mistakes from this week's labs and drills",
@@ -27,9 +29,18 @@ export function WeeklyReview({ progress }: WeeklyReviewProps) {
   const weekActivity = getCalendarWeekCheckIns(progress.checkIns, progress.studyHistory);
   const blockPercent = Math.round((weekStats.blocksComplete / weekStats.totalBlocks) * 100);
   const dayPercent = Math.round((weekStats.daysComplete / 7) * 100);
+  const labsPassed = progress.completedSimulatorLabs.length;
+  const labsTotal = LAB_LIST.length;
+  const labPercent = labsTotal > 0 ? Math.round((labsPassed / labsTotal) * 100) : 0;
+  const drillAccuracy =
+    progress.drillStats.totalAttempts > 0
+      ? Math.round(
+          (progress.drillStats.totalCorrect / progress.drillStats.totalAttempts) * 100,
+        )
+      : 0;
 
   return (
-    <Card className="mt-8">
+    <Card className="mt-8" data-testid="weekly-review">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-medium">Weekly Review</h2>
@@ -51,6 +62,38 @@ export function WeeklyReview({ progress }: WeeklyReviewProps) {
           value={blockPercent}
           label={`Blocks complete · ${weekStats.blocksComplete}/${weekStats.totalBlocks}`}
         />
+        <ProgressBar
+          value={labPercent}
+          label={`Simulator labs passed · ${labsPassed}/${labsTotal}`}
+        />
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-border/50 bg-background p-4">
+          <h3 className="text-xs uppercase tracking-widest text-muted">Drill performance</h3>
+          <p className="mt-2 text-sm">
+            {progress.drillStats.totalAttempts > 0 ? (
+              <>
+                {progress.drillStats.totalCorrect}/{progress.drillStats.totalAttempts} correct
+                ({drillAccuracy}%) · best streak {progress.drillStats.bestStreak}
+              </>
+            ) : (
+              <span className="text-muted">No drill attempts yet.</span>
+            )}
+          </p>
+          <Link href="/drills" className="mt-2 inline-block text-xs font-medium text-accent">
+            Open drills →
+          </Link>
+        </div>
+        <div className="rounded-lg border border-border/50 bg-background p-4">
+          <h3 className="text-xs uppercase tracking-widest text-muted">Simulator labs</h3>
+          <p className="mt-2 text-sm">
+            {labsPassed}/{labsTotal} browser labs graded at 100%.
+          </p>
+          <Link href="/labs" className="mt-2 inline-block text-xs font-medium text-accent">
+            Lab stack →
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6">

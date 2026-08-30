@@ -1,6 +1,9 @@
 import type { CertificationGate } from "./types";
 import type { ProgressState } from "./types";
 import { CERTIFICATION_GATES, getPhase } from "./curriculum";
+import { LAB_LIST } from "@/content/labs";
+
+const BROWSER_LAB_COUNT = LAB_LIST.length;
 
 export interface GateCriterion {
   id: string;
@@ -47,6 +50,25 @@ function subnettingReady(progress: ProgressState): GateCriterion {
   };
 }
 
+function vlsmReady(progress: ProgressState): GateCriterion {
+  const { drillStats } = progress;
+  const accuracy =
+    drillStats.totalAttempts > 0
+      ? Math.round((drillStats.totalCorrect / drillStats.totalAttempts) * 100)
+      : 0;
+  const met =
+    drillStats.bestStreak >= 5 || (drillStats.totalAttempts >= 8 && accuracy >= 75);
+  return {
+    id: "vlsm",
+    label: "VLSM design fluency",
+    met,
+    detail: met
+      ? `Best streak ${drillStats.bestStreak}, ${accuracy}% accuracy`
+      : `Need 5+ streak or 75%+ over 8 attempts (currently ${drillStats.bestStreak} streak, ${accuracy}%)`,
+    cta: met ? undefined : { href: "/drills/vlsm", label: "Practice VLSM" },
+  };
+}
+
 function wiresharkReady(progress: ProgressState): GateCriterion {
   const wiresharkSteps = ["pa-wireshark", "pa-tcpdump", "pa-filters", "pa-review"];
   const done = wiresharkSteps.filter((id) => progress.labSetupComplete.includes(id)).length;
@@ -58,6 +80,21 @@ function wiresharkReady(progress: ProgressState): GateCriterion {
     detail: met
       ? `${done}/${wiresharkSteps.length} packet analysis steps complete`
       : `Complete at least 2 packet analysis lab steps (${done}/${wiresharkSteps.length})`,
+    cta: met ? undefined : { href: "/labs", label: "Open packet analysis labs" },
+  };
+}
+
+function simulatorLabsReady(progress: ProgressState): GateCriterion {
+  const passed = progress.completedSimulatorLabs.length;
+  const met = passed >= BROWSER_LAB_COUNT;
+  return {
+    id: "simulator-labs",
+    label: "Browser simulator labs",
+    met,
+    detail: met
+      ? `All ${BROWSER_LAB_COUNT} graded labs passed`
+      : `${passed}/${BROWSER_LAB_COUNT} browser labs passed — complete all in NetForge Simulator`,
+    cta: met ? undefined : { href: "/labs", label: "Open lab stack" },
   };
 }
 
@@ -73,6 +110,7 @@ function phasesReady(
     label,
     met,
     detail: met ? "All modules complete" : `${percent}% of required modules complete`,
+    cta: met ? undefined : { href: "/curriculum", label: "View curriculum" },
   };
 }
 
@@ -98,7 +136,9 @@ function getGateCriteria(gateId: string, progress: ProgressState): GateCriterion
       return [
         phasesReady(completedModules, ["phase-0", "phase-1", "phase-2", "phase-3"], "Phase 0–3 complete"),
         subnettingReady(progress),
+        vlsmReady(progress),
         wiresharkReady(progress),
+        simulatorLabsReady(progress),
       ];
     case "security-plus":
       return [

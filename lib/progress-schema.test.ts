@@ -16,7 +16,6 @@ describe("progress schema", () => {
     const parsed = parseStoredProgress(stored);
     expect(parsed.currentWeek).toBe(2);
     expect(parsed.streak).toBe(3);
-    expect(parsed.focusChecklists).toEqual({});
     expect(parsed.lastBackupDate).toBe("");
   });
 
@@ -27,6 +26,15 @@ describe("progress schema", () => {
     });
     const parsed = parseStoredProgress(stored);
     expect(parsed.lastBackupDate).toBe("2026-08-20");
+  });
+
+  it("preserves completedSimulatorLabs when stored", () => {
+    const stored = JSON.stringify({
+      ...DEFAULT_PROGRESS,
+      completedSimulatorLabs: ["basic-lan", "static-route"],
+    });
+    const parsed = parseStoredProgress(stored);
+    expect(parsed.completedSimulatorLabs).toEqual(["basic-lan", "static-route"]);
   });
 
   it("rejects invalid import payloads", () => {

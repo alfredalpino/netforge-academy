@@ -37,6 +37,21 @@ export interface NetworkInterface {
     allowedVlans: number[];
   };
   counters: InterfaceCounters;
+  /** STP port role/state (switches). */
+  stpRole?: "root" | "designated" | "alternate" | "disabled";
+  stpState?: "forwarding" | "blocking";
+  /** Applied standard ACL number (routers). */
+  accessGroupIn?: number;
+  accessGroupOut?: number;
+  /** NAT role on router interfaces. */
+  natInside?: boolean;
+  natOutside?: boolean;
+  /** Parent physical interface (router subinterfaces). */
+  parentInterfaceId?: string;
+  /** 802.1Q encapsulation VLAN (router subinterfaces). */
+  encapVlan?: number;
+  /** SVI VLAN id (L3 switch virtual interfaces). */
+  sviVlan?: number;
 }
 
 export interface ArpEntry {
@@ -58,8 +73,30 @@ export interface RouteEntry {
   prefixLength: number;
   nextHop: string | null; // null = connected
   ifaceId: string;
+  /** Route preference — connected=0, static=1, ospf=110 */
   metric: number;
-  kind: "connected" | "static";
+  kind: "connected" | "static" | "ospf";
+}
+
+export interface OspfNetworkStmt {
+  network: string;
+  wildcard: string;
+  area: number;
+}
+
+export interface OspfProcess {
+  processId: number;
+  routerId: string | null;
+  networks: OspfNetworkStmt[];
+}
+
+export interface OspfNeighbor {
+  neighborId: string;
+  address: string;
+  interfaceId: string;
+  interfaceName: string;
+  state: "FULL";
+  area: number;
 }
 
 export interface DeviceRuntimeState {
@@ -67,6 +104,8 @@ export interface DeviceRuntimeState {
   macTable: MacEntry[];
   routingTable: RouteEntry[];
   pendingArp: Map<string, string[]>; // ip -> packetIds waiting
+  /** Active NAT translations (routers). */
+  natTranslations?: NatTranslation[];
 }
 
 export interface NetworkDevice {
@@ -78,7 +117,72 @@ export interface NetworkDevice {
   interfaces: NetworkInterface[];
   hostname: string;
   runningConfigLines: string[];
+  /** OSPF process config (routers). */
+  ospf?: OspfProcess | null;
+  /** Last computed adjacencies for show commands. */
+  ospfNeighbors?: OspfNeighbor[];
+  /** DHCP pools (routers). */
+  dhcpPools?: DhcpPool[];
+  /** Numbered ACLs (routers) — standard 1–99, extended 100–199. */
+  accessLists?: AccessList[];
+  /** PAT overload rules (routers). */
+  natRules?: NatPatRule[];
+  /** L3 routing enabled (multilayer switches). */
+  ipRouting?: boolean;
   runtime: DeviceRuntimeState;
+}
+
+export type AclProtocol = "ip" | "icmp" | "tcp" | "udp";
+
+export interface StandardAclEntry {
+  seq: number;
+  action: "permit" | "deny";
+  source: string;
+  wildcard: string;
+  hits: number;
+}
+
+export interface ExtendedAclEntry {
+  seq: number;
+  action: "permit" | "deny";
+  protocol: AclProtocol;
+  source: string;
+  sourceWildcard: string;
+  dest: string;
+  destWildcard: string;
+  /** Source port (eq) — tcp/udp only; undefined = any */
+  sourcePortEq?: number;
+  /** Destination port (eq) — tcp/udp only; undefined = any */
+  destPortEq?: number;
+  hits: number;
+}
+
+export interface StandardAccessList {
+  kind: "standard";
+  number: number;
+  entries: StandardAclEntry[];
+}
+
+export interface ExtendedAccessList {
+  kind: "extended";
+  number: number;
+  entries: ExtendedAclEntry[];
+}
+
+export type AccessList = StandardAccessList | ExtendedAccessList;
+
+export interface NatPatRule {
+  kind: "pat-overload";
+  aclNumber: number;
+  outsideIfaceId: string;
+}
+
+export interface NatTranslation {
+  insideLocal: string;
+  insideGlobal: string;
+  outsideLocal: string;
+  outsideGlobal: string;
+  ageSimTime: number;
 }
 
 export interface LinkEndpoint {
@@ -127,6 +231,36 @@ export interface IcmpPayload {
   data?: string;
 }
 
+export interface UdpPayload {
+  srcPort: number;
+  dstPort: number;
+}
+
+export interface TcpPayload {
+  srcPort: number;
+  dstPort: number;
+}
+
+export interface DhcpPayload {
+  messageType: "discover" | "offer" | "request" | "ack";
+  clientMac: string;
+  yiaddr?: string;
+  serverId?: string;
+}
+
+export interface DhcpLease {
+  ip: string;
+  mac: string;
+}
+
+export interface DhcpPool {
+  name: string;
+  network: string;
+  prefixLength: number;
+  defaultRouter: string;
+  leases: DhcpLease[];
+}
+
 export interface Packet {
   id: string;
   createdAt: number;
@@ -136,12 +270,17 @@ export interface Packet {
     arp?: ArpPayload;
     ipv4?: IPv4Header;
     icmp?: IcmpPayload;
+    tcp?: TcpPayload;
+    udp?: UdpPayload;
+    dhcp?: DhcpPayload;
   };
   meta: {
     ingressIface?: string;
     egressIface?: string;
     dropReason?: string;
     hopDeviceIds?: string[];
+    /** VLAN context preserved when L3 device receives tagged frames from a trunk. */
+    vlanId?: number;
   };
 }
 
@@ -215,6 +354,16 @@ export const ETHertype = {
 export const ICMP = {
   ECHO_REPLY: 0,
   ECHO_REQUEST: 8,
+} as const;
+
+export const IP_PROTOCOL = {
+  ICMP: 1,
+  UDP: 17,
+} as const;
+
+export const DHCP_PORTS = {
+  SERVER: 67,
+  CLIENT: 68,
 } as const;
 
 export const BROADCAST_MAC = "ff:ff:ff:ff:ff:ff";

@@ -1,0 +1,31 @@
+# Remove Focus Mode — 2026-08-30
+
+## Summary
+Removed Focus Mode and the entire Pomodoro/focus-session stack from NetForge per user request.
+
+## Deleted files
+- app/focus/page.tsx
+- components/FocusShortcutsHelp.tsx
+- components/StudyMaterial.tsx
+- components/PomodoroBubble.tsx
+- components/PomodoroSettingsPanel.tsx
+- hooks/usePomodoro.ts
+- lib/pomodoro.ts
+- lib/focus-content.ts
+
+## Updated files
+- components/Sidebar.tsx — removed nav item and footer CTA; replaced with "Open Today's Plan"
+- app/page.tsx — primary CTA is now Today's Plan
+- app/today/page.tsx — removed Focus Mode links and copy
+- app/labs/page.tsx — updated distraction-free workflow section
+- app/guide/page.tsx — removed Focus Mode FAQ entries
+- lib/tours.ts — removed Focus Mode tour; updated welcome tour copy
+- components/TourLauncher.tsx — removed /focus pathname guard
+- app/manifest.ts — removed PWA shortcut
+- lib/types.ts, lib/progress-schema.ts, lib/progress.tsx — removed focusChecklists state
+- app/globals.css — removed focus-mode, pomodoro bubble, and focus-bg tokens
+- next.config.ts — permanent redirect /focus → /today for bookmarks
+
+## Verification
+- npm run build — success
+- npm test — 29/29 passed

@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
 import { useTour } from "./TourProvider";
 import { TOURS } from "@/lib/tours";
 
 export function TourLauncher() {
-  const pathname = usePathname();
   const { startTour, isActive } = useTour();
   const [open, setOpen] = useState(false);
 
-  if (isActive || pathname.startsWith("/focus")) return null;
+  if (isActive) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-30">

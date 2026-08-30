@@ -9,6 +9,8 @@ export type SimTopBarProps = {
   onRestore?: () => void;
   onSubmit?: () => void;
   onLoadSample?: () => void;
+  /** Leave room for the floating ChatGPT-style open-sidebar control. */
+  navCollapsed?: boolean;
 };
 
 export function SimTopBar({
@@ -18,13 +20,15 @@ export function SimTopBar({
   onRestore,
   onSubmit,
   onLoadSample,
+  navCollapsed = false,
 }: SimTopBarProps) {
   return (
     <header className="sim-panel flex h-12 shrink-0 items-center gap-3 border-b border-border px-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 font-display text-[0.65rem] font-bold text-accent">
-          NF
-        </span>
+      <div
+        className={`flex min-w-0 items-center gap-2 transition-[padding] ${
+          navCollapsed ? "md:pl-10" : ""
+        }`}
+      >
         <div className="min-w-0">
           <p className="truncate font-display text-sm font-semibold tracking-tight text-foreground">
             {labTitle}

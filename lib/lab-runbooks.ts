@@ -7,6 +7,9 @@ export interface LabRunbook {
   verify: string[];
 }
 
+/** Browser-graded labs in NetForge simulator — deep link via /simulator?lab=<id> */
+export { LAB_LIST as SIMULATOR_LABS, LAB_CATALOG } from "@/content/labs";
+
 const LAB_RUNBOOKS: LabRunbook[] = [
   // WEEK 5 — VLANs
   {

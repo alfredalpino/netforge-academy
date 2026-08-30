@@ -21,7 +21,7 @@ export default function GatesPage() {
   const readyCount = gateProgress.filter((g) => g.ready).length;
 
   return (
-    <PageShell>
+    <PageShell testId="gates-page">
       <PageHeader
         eyebrow="Certification Path"
         title="Certification Gates"

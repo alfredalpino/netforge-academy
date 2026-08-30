@@ -4,13 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useProgress } from "@/lib/progress";
+import { useNavLayout } from "@/components/NavLayoutContext";
+import { SidebarToggle } from "@/components/SidebarToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV_GROUPS = [
   {
     label: "Study",
     items: [
       { href: "/", label: "Dashboard", icon: "dashboard" as const },
-      { href: "/focus", label: "Focus Mode", icon: "focus" as const },
       { href: "/today", label: "Today", icon: "today" as const },
       { href: "/accountability", label: "Accountability", icon: "accountability" as const },
     ],
@@ -28,6 +30,7 @@ const NAV_GROUPS = [
     label: "Academy",
     items: [
       { href: "/curriculum", label: "Curriculum", icon: "curriculum" as const },
+      { href: "/topics", label: "Topic Videos", icon: "topics" as const },
       { href: "/resources", label: "Resources", icon: "resources" as const },
       { href: "/guide", label: "How to Use", icon: "guide" as const },
     ],
@@ -43,13 +46,6 @@ function NavIcon({ name }: { name: NavIconName }) {
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path d="M4 10.5L12 4l8 6.5V20a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1v-9.5z" strokeWidth="1.75" strokeLinejoin="round" />
-        </svg>
-      );
-    case "focus":
-      return (
-        <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <circle cx="12" cy="12" r="8" strokeWidth="1.75" />
-          <circle cx="12" cy="12" r="2.5" fill="currentColor" />
         </svg>
       );
     case "today":
@@ -69,6 +65,13 @@ function NavIcon({ name }: { name: NavIconName }) {
       return (
         <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path d="M4 6h16M4 12h12M4 18h8" strokeWidth="1.75" strokeLinecap="round" />
+        </svg>
+      );
+    case "topics":
+      return (
+        <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="12" rx="2" strokeWidth="1.75" />
+          <path d="M10 9l5 3-5 3V9z" fill="currentColor" stroke="none" />
         </svg>
       );
     case "resources":
@@ -156,72 +159,104 @@ function NavLinks({
   );
 }
 
-function BrandMark({ compact = false }: { compact?: boolean }) {
+function BrandMark() {
   return (
-    <span className="flex items-center gap-3">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 font-display text-sm font-bold text-accent">
-        NF
+    <span className="min-w-0">
+      <span className="font-display block text-[1.05rem] font-semibold tracking-tight text-foreground">
+        NetForge
       </span>
-      {!compact && (
-        <span className="min-w-0">
-          <span className="font-display block text-base font-semibold tracking-tight text-foreground">
-            NetForge
-          </span>
-          <span className="block text-[0.6875rem] text-muted">Network Engineering Academy</span>
-        </span>
-      )}
     </span>
   );
 }
 
 export function Sidebar() {
   const pathname = usePathname();
-  const isFocus = pathname.startsWith("/focus");
   const [mobileOpen, setMobileOpen] = useState(false);
   const { progress, loaded } = useProgress();
+  const { collapsed, toggleCollapsed, setCollapsed } = useNavLayout();
+
+  const openMobile = () => {
+    setCollapsed(false);
+    setMobileOpen(true);
+  };
+
+  const closeMobile = () => setMobileOpen(false);
 
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border/80 bg-surface/90 px-4 backdrop-blur-md md:hidden">
-        <Link href="/" className="font-display font-semibold tracking-tight text-foreground">
-          <BrandMark compact />
-        </Link>
-        <button
-          type="button"
-          onClick={() => setMobileOpen((open) => !open)}
-          className="rounded-xl border border-border px-3 py-2 text-sm text-muted hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-nav"
-        >
-          {mobileOpen ? "Close" : "Menu"}
-        </button>
+      {/* Mobile top chrome — panel icon, not hamburger / Menu text */}
+      <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border/80 bg-surface/90 px-3 backdrop-blur-md md:hidden">
+        <div className="flex items-center gap-2">
+          <SidebarToggle
+            collapsed={!mobileOpen}
+            onToggle={() => (mobileOpen ? closeMobile() : openMobile())}
+            aria-controls="mobile-nav"
+            aria-expanded={mobileOpen}
+          />
+          <Link href="/" className="font-display text-sm font-semibold tracking-tight text-foreground">
+            NetForge
+          </Link>
+        </div>
       </header>
+
+      {/* Desktop: reopen control when sidebar is fully collapsed */}
+      {collapsed && (
+        <div className="fixed left-3 top-3 z-50 hidden md:block">
+          <SidebarToggle collapsed onToggle={toggleCollapsed} />
+        </div>
+      )}
 
       {mobileOpen && (
         <button
           type="button"
           className="fixed inset-0 z-40 bg-black/55 md:hidden"
           aria-label="Close navigation menu"
-          onClick={() => setMobileOpen(false)}
+          onClick={closeMobile}
         />
       )}
 
       <aside
         id="mobile-nav"
         data-tour="sidebar"
-        className={`fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-border/80 bg-surface/95 backdrop-blur-md transition-transform md:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 flex h-full w-[min(260px,85vw)] flex-col border-r border-border/80 bg-surface/95 backdrop-blur-md transition-[transform,opacity,width] duration-200 ease-out md:w-[var(--nav-width,260px)] ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
-        } md:w-60`}
+        } ${
+          collapsed
+            ? "md:pointer-events-none md:w-0 md:-translate-x-full md:opacity-0 md:border-0"
+            : "md:translate-x-0 md:opacity-100"
+        }`}
       >
-        <div className="border-b border-border/80 px-4 py-5">
-          <Link href="/" className="block" onClick={() => setMobileOpen(false)}>
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-3">
+          <Link href="/" className="min-w-0 truncate" onClick={closeMobile}>
             <BrandMark />
           </Link>
+          <div className="flex items-center gap-0.5">
+            <SidebarToggle
+              collapsed={false}
+              onToggle={() => {
+                if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+                  closeMobile();
+                } else {
+                  toggleCollapsed();
+                }
+              }}
+              className="hidden md:flex"
+              tooltipSide="left"
+            />
+            <SidebarToggle
+              collapsed={false}
+              onToggle={closeMobile}
+              className="md:hidden"
+              showTooltip={false}
+            />
+          </div>
         </div>
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
-          <NavLinks pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+
+        <nav className="flex-1 overflow-y-auto px-2 py-2">
+          <NavLinks pathname={pathname} onNavigate={closeMobile} />
         </nav>
-        <div className="space-y-3 border-t border-border/80 p-4">
+
+        <div className="space-y-3 border-t border-border/80 p-3">
           {loaded && (
             <div className="rounded-xl border border-border/70 bg-surface-elevated/60 px-3 py-2.5">
               <p className="section-label">Current track</p>
@@ -231,19 +266,14 @@ export function Sidebar() {
               </p>
             </div>
           )}
-          {isFocus ? (
-            <div className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-center text-sm font-medium text-accent">
-              Focus Mode active
-            </div>
-          ) : (
-            <Link
-              href="/focus"
-              onClick={() => setMobileOpen(false)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-[0_10px_24px_-12px_color-mix(in_srgb,var(--accent)_80%,transparent)] transition hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Enter Focus Mode
-            </Link>
-          )}
+          <ThemeToggle />
+          <Link
+            href="/today"
+            onClick={closeMobile}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white shadow-[0_10px_24px_-12px_color-mix(in_srgb,var(--accent)_80%,transparent)] transition hover:bg-accent-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Open Today&apos;s Plan
+          </Link>
         </div>
       </aside>
     </>
@@ -254,7 +284,7 @@ export function MainContent({ children }: { children: React.ReactNode }) {
   return (
     <main
       id="main-content"
-      className="min-h-screen overflow-x-hidden pt-14 md:ml-60 md:pt-0"
+      className="min-h-screen overflow-x-hidden pt-14 transition-[margin] duration-200 ease-out md:ml-[var(--nav-width,260px)] md:pt-0"
     >
       {children}
     </main>

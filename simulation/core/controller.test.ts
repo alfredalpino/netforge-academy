@@ -72,6 +72,24 @@ describe("SimulationController ping vertical slice", () => {
     expect(traces.some((t) => t.protocol === "ICMP" && t.outcome === "delivered")).toBe(
       true,
     );
+
+    const events = sim.getRecentEvents();
+    expect(events.some((e) => e.type === "PING_RESULT")).toBe(true);
+    expect(events.some((e) => e.type === "LINK_TRANSMIT" && e.data.action)).toBe(true);
+    expect(result.output).toContain("Path:");
+  });
+
+  it("show ip interface brief and show ip route", () => {
+    const sim = new SimulationController();
+    configureBasicLan(sim);
+
+    const brief = sim.executeCommand("R1", "show ip interface brief");
+    expect(brief.output).toContain("Gi0/0");
+    expect(brief.output).toContain("10.0.0.1");
+
+    const routes = sim.executeCommand("R1", "show ip route");
+    expect(routes.output).toContain("10.0.0.0/24");
+    expect(routes.output).toContain("Gi0/0");
   });
 
   it("ping fails without addressing", () => {

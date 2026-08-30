@@ -1,0 +1,20 @@
+# Port 3000 / NetForge launch log
+Date: 2026-08-29
+
+## Issue
+User saw New Frontier Bakery (NFB) on localhost:3000 despite not opening the local NFB project.
+
+## Root cause
+- NFB is developed on remote server (frontier / 201.7.16.121) via SSH.
+- Remote NFB uses default Next.js port 3000 (.env.example: NEXTAUTH_URL=http://localhost:3000).
+- Cursor Remote SSH auto-forwards remote port 3000 to local localhost:3000 when connected.
+- Local NFB copy at ~/Torpedoweb/Clients/Frontier-Bakery uses port 3100 (package.json dev script), so local project was not the source.
+
+## Actions taken
+1. Cleared/killed any listeners on port 3000 (none were active at time of check).
+2. Started NetForge (network-engineering-academy) on http://127.0.0.1:3000 via `npm run dev -- -p 3000 -H 127.0.0.1`.
+3. Verified GET / returns 200 with NetForge content.
+
+## Prevention
+- Close Cursor Remote SSH session to frontier when working on NetForge locally, or stop remote NFB dev server on the VPS.
+- Optionally run remote NFB on a non-3000 port to avoid collision with local NetForge.

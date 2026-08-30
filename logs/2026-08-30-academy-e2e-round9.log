@@ -1,0 +1,19 @@
+# Academy E2E Round 9 — full 14-lab coverage (2026-08-30)
+
+## Added specs
+- simulator-arp-icmp.spec.ts
+- simulator-trunk-vlan.spec.ts
+- simulator-stp-loop.spec.ts
+- simulator-acl-standard.spec.ts
+- simulator-inter-vlan-routing.spec.ts
+- simulator-acl-extended.spec.ts
+- simulator-inter-vlan-svi.spec.ts
+
+## Infrastructure
+- SimulatorShell: `simulator:select-device` custom event for reliable Playwright device targeting
+- playwright.config.ts: viewport 1600×900
+- simulator-helpers: programmatic selectDevice via custom event
+
+## Results
+- npm run validate: pass
+- npm run test:e2e: 24 passed (10 smoke + 14 sim labs)

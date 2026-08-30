@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ProgressTracker } from "@/components/ProgressTracker";
 import { JourneyNavigator } from "@/components/JourneyNavigator";
+import { AcademyPracticeSection } from "@/components/AcademyPracticeSection";
 import { getOverallProgress, useProgress } from "@/lib/progress";
 import { getDayPlan } from "@/lib/daily-plans";
 import { getWeekPhase } from "@/lib/schedule";
@@ -17,6 +18,7 @@ import {
   PRIORITY_CONCEPTS,
   CERTIFICATION_GATES,
 } from "@/lib/curriculum";
+import { LAB_LIST } from "@/content/labs";
 
 export default function DashboardPage() {
   const { progress, loaded } = useProgress();
@@ -29,7 +31,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <PageShell>
+    <PageShell testId="dashboard">
       <section className="relative mb-12 overflow-hidden rounded-[1.75rem] border border-border/80 card-accent px-6 py-10 sm:px-10 sm:py-12">
         <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden="true">
           <div className="absolute -right-16 top-0 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
@@ -54,13 +56,8 @@ export default function DashboardPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3" data-tour="quick-actions">
-            <Link href="/focus">
-              <Button size="lg">Start Focus Session</Button>
-            </Link>
             <Link href="/today">
-              <Button size="lg" variant="secondary">
-                Today&apos;s Plan
-              </Button>
+              <Button size="lg">Today&apos;s Plan</Button>
             </Link>
             <Link href="/drills/subnetting">
               <Button size="lg" variant="ghost">
@@ -69,7 +66,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <dl className="mt-10 grid max-w-xl grid-cols-3 gap-4 border-t border-border/60 pt-6">
+          <dl className="mt-10 grid max-w-xl grid-cols-2 gap-4 border-t border-border/60 pt-6 sm:grid-cols-4">
             <div>
               <dt className="section-label">Position</dt>
               <dd className="mt-1 font-mono text-sm text-foreground">
@@ -79,6 +76,12 @@ export default function DashboardPage() {
             <div>
               <dt className="section-label">Progress</dt>
               <dd className="mt-1 font-mono text-sm text-foreground">{overall?.overall ?? 0}%</dd>
+            </div>
+            <div>
+              <dt className="section-label">Sim labs</dt>
+              <dd className="mt-1 font-mono text-sm text-foreground">
+                {progress.completedSimulatorLabs.length}/{LAB_LIST.length}
+              </dd>
             </div>
             <div>
               <dt className="section-label">Phase</dt>
@@ -104,7 +107,7 @@ export default function DashboardPage() {
                 </p>
               ) : (
                 <p className="mt-4 text-sm text-warning">
-                  Module study mode — detailed day plans cover weeks 1–6
+                  Module study mode — detailed day plans cover weeks 1–28
                 </p>
               )}
               <div className="mt-6 flex flex-wrap gap-2">
@@ -129,6 +132,8 @@ export default function DashboardPage() {
         <div>
           <JourneyNavigator compact />
         </div>
+
+        <AcademyPracticeSection />
 
         <Card variant="elevated">
           <p className="section-label">Methodology</p>

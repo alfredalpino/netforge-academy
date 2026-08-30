@@ -1,0 +1,18 @@
+# Round 3 Master Polish — 2026-08-30
+
+## Actions
+
+1. **Tutor ↔ Score cross-link** — ScorePane "View hint →" jumps to Tutor with highlighted check; Tutor "← Score" jumps back
+2. **Per-lab playbooks** — tutor-hints.ts playbooks for all 5 graded labs
+3. **ModuleCard** — "Practice in simulator" deep link via academy-resources
+4. **Week 7 daily plans** — Phase 2 capstone + static routing preview (7 days)
+5. **README** — removed Focus/Pomodoro; added simulator, topics, 5 labs
+6. **TOPIC_VIDEO_DEFERRALS** — Azure, Fortinet, BGP, automation, wireless security documented
+
+## Validation
+
+npm run validate — GREEN (67 tests)
+
+## Master score
+
+8/10 on loop criteria. Full academy goal remains active (weeks 8–28, advanced sim protocols).

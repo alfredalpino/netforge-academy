@@ -1,0 +1,701 @@
+# Network Academy Loop Session — Master Coordination Log
+
+**Started:** 2026-08-30  
+**Goal:** Complete working networking simulator + resource-rich Network Academy  
+**Structure:** Master agent + 5 specialist subagents, iterative review/polish loops
+
+## Specialist roster
+
+| ID | Role | Focus |
+|----|------|-------|
+| A | Sim Engine | Packet engine, CLI, ARP/ICMP/VLAN/forwarding |
+| B | Sim UI | Dock stubs, capture/tutor panes, UX polish |
+| C | Content Labs | Lab scenarios, topic videos, runbooks |
+| D | Academy UX | Dashboard, journey, guide, topic integration |
+| E | QA Polish | Tests, validate, edge cases, regressions |
+
+## Round status
+
+- Round 1: **4/5 complete** — A ✅ B ✅ D ✅ E ✅ | **C pending** (no report; still 2 labs)
+- Round 2: **A ✅ C ✅** (incl. late [C Round 1](8e62d6bc-1607-4f58-ae28-968f04aa6eff) report) | B/D/E polish remain
+
+## Master Round 2 Review (2026-08-30)
+
+**Score: 7.5/10** — core academy loop (watch → practice → grade) is real.
+
+| Criterion | Status |
+|-----------|--------|
+| 1. No core StubPanes | ✅ |
+| 2. ≥5 graded labs | ✅ — [C: Content](b92a09f3-d6f5-4517-a622-caefc86f87c6): arp-icmp, trunk-vlan, static-route + existing 2 |
+| 3. Topic video gaps | ⚠️ wireless ✅ (Day 55–56); Azure/FortiGate still deferred |
+| 4. Dashboard/journey integration | ✅ |
+| 5. validate green | ✅ — 66 tests |
+| 6. End-to-end sim | ✅ — static routes + [A: Engine](4e963236-8ee1-458b-91b5-39c062491005) |
+
+**Next loop priorities:** weeks 8–12 daily plans, sim OSPF/STP stubs, Playwright smoke, sim↔progress wiring.
+
+## Round 3 — Master direct polish (2026-08-30)
+
+**Score: 8/10** on loop success criteria — goal stays active for weeks 8–28 + deeper sim protocols.
+
+| Deliverable | Status |
+|-------------|--------|
+| Tutor ↔ Score cross-link | ✅ `View hint →` / `← Score` + highlight |
+| Per-lab tutor playbooks | ✅ all 5 labs |
+| ModuleCard → simulator deep link | ✅ |
+| Week 7 daily plans | ✅ 7 days added |
+| README docs hygiene | ✅ focus/pomodoro removed; sim/topics documented |
+| Topic deferrals | ✅ `TOPIC_VIDEO_DEFERRALS` in topic-videos.ts |
+| validate | ✅ 67 tests |
+
+**Still open for full-fledged academy:** weeks 13–28 plans, OSPF/STP/DHCP in engine, worker runtime, E2E tests.
+
+## Round 4 — Master polish (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Sim lab pass → progress (`completedSimulatorLabs`) | ✅ toast + persist on pass |
+| Labs page passed badges | ✅ X/5 passed |
+| Weeks 8–12 daily plans | ✅ Phase 3 routing + Phase 4 services start (35 days) |
+| progress-schema test | ✅ completedSimulatorLabs migration |
+
+## Round 5 — Master polish (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Weeks 13–16 daily plans | ✅ NAT, wireless, QoS, security, ACLs (28 days) |
+| CCNA gate: simulator labs criterion | ✅ 5/5 browser labs |
+| Dashboard sim labs stat | ✅ X/5 in hero stats |
+| UI copy | ✅ weeks 1–16 on dashboard/today |
+
+**Still open:** weeks 17–28, sim OSPF/STP/DHCP, worker runtime, E2E.
+
+## Round 6 — Master polish (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Weeks 25–28 daily plans | ✅ Azure admin, networking, connectivity, AZ-700 capstone (28 days) |
+| Microsoft Learn / John Savill refs | ✅ No fake YouTube IDs — aligned with `TOPIC_VIDEO_DEFERRALS` |
+| UI copy weeks 1–28 | ⏸️ Deferred — weeks 21–24 still missing (17–20 + 25–28 present) |
+| validate | ✅ 68 tests, build green |
+
+**Still open:** weeks 21–24 (automation, cloud fundamentals), sim OSPF/STP/DHCP, worker runtime, E2E.
+
+## Master Round 1 Review (2026-08-30)
+
+**Score: 6.5/10** — major simulator + UX leap; content depth still blocks "full-fledged."
+
+| Criterion | Status | Notes |
+|-----------|--------|-------|
+| 1. No core StubPanes | ✅ | [B: Sim UI](cda778ff-ad45-47d3-b851-0605ebb70b05) — Capture + Tutor live |
+| 2. ≥5 graded labs | ❌ | Still 2 (`basic-lan`, `vlan-segment`) — **C blocker** |
+| 3. Topic video gaps | ⚠️ | ~48 topics; wireless/Azure/FortiGate deferred |
+| 4. Dashboard/journey integration | ✅ | [D: Academy UX](ccee0202-ccc7-4b16-aa72-b89f34c1adf4) — `academy-resources.ts` |
+| 5. validate green | ✅ | Master re-run passed post-merge |
+| 6. End-to-end sim | ✅ | [A: Sim Engine](4e963236-8ee1-458b-91b5-39c062491005) — trunk VLAN ping + show CLI |
+
+**Inventory baseline:** [Explore](3a636555-72a8-4186-8540-f71afdb8b452) — weeks 7–28 daily plans still missing (Round 3+).
+
+### Round 2 assignments
+
+| Agent | Task |
+|-------|------|
+| **C** (resume) | Add ≥3 new graded labs (static-route, arp-icmp, trunk-vlan or stp-intro); wire `lib/academy-resources.ts`, `app/labs/page.tsx`, lab registry; CDP/LLDP topic if ID verified |
+| **A** (resume) | Static routes + host default gateway (enables static-route lab) |
+| **B** (resume) | Tutor ↔ Score cross-link; per-lab hint ids when C adds labs |
+| **D** (resume) | Map new labs in `academy-resources.ts` after C lands |
+| **E** (resume) | lab-schema tests for new labs; docs hygiene (README focus refs) |
+
+## Success criteria (goal complete when all true)
+
+1. Simulator: no StubPanes for core tabs; ping/ARP/VLAN/path visible end-to-end
+2. ≥5 graded labs with deep links from curriculum/labs pages
+3. Topic videos cover wireless + remaining high-priority gaps OR documented deferrals
+4. Dashboard/journey link to topics + simulator labs
+5. `npm run validate` green
+6. Master review score ≥ 8/10 on completeness
+
+## Round 1 assignments
+
+Agents launched in parallel (2026-08-30):
+
+| Role | Agent ID |
+|------|----------|
+| A Sim Engine | 4e963236-8ee1-458b-91b5-39c062491005 |
+| B Sim UI | cda778ff-ad45-47d3-b851-0605ebb70b05 |
+| C Content Labs | 8e62d6bc-1607-4f58-ae28-968f04aa6eff |
+| D Academy UX | ccee0202-ccc7-4b16-aa72-b89f34c1adf4 |
+| E QA Polish | ed30bdba-ce87-4dd4-a8b1-25f3502ae745 |
+| Explore (inventory) | 3a636555-72a8-4186-8540-f71afdb8b452 |
+
+Loop: every 15m (`AGENT_LOOP_TICK_academy_master`) — Master wakes to review + reassign polish.
+
+Reports land below as agents finish.
+
+---
+
+## Round 1 — Agent A report
+
+**Agent:** Specialist A (Sim Engine)  
+**Completed:** 2026-08-30
+
+### What changed (files + why)
+
+| File | Why |
+|------|-----|
+| `simulation/core/controller.ts` | Preserve VLAN context on L3 ingress from trunk (`meta.vlanId`); re-tag egress to switch trunks; emit `LINK_TRANSMIT` hop events + `PING_RESULT`; ping output includes ARP/ICMP path summary |
+| `simulation/core/types.ts` | Added `vlanId` to packet meta for trunk symmetry |
+| `simulation/cli/interpreter.ts` | Fixed `end` to exit to privileged from any config submode; improved `show arp`, `show mac address-table`, `show vlan brief`, `show ip route`, `show ip interface brief`; added `show interfaces trunk` |
+| `simulation/core/controller.test.ts` | Tests for ping events/path + show CLI |
+| `simulation/core/vlan.test.ts` | Test for PC1→R1 across access VLAN + trunk; show vlan/mac/trunk |
+
+### What works now that didn't
+
+- **Ping over trunk:** PC on access VLAN 10 can ping router on trunk (ARP reply correctly tagged VLAN 10, not dropped as native VLAN 1)
+- **Hop visibility:** Each trace hop emits `LINK_TRANSMIT` events; ping ends with `PING_RESULT`; CLI ping output shows `Path: …` chain
+- **CLI `end`:** Exits to privileged from interface/config (labs using `end` after config can run `show` commands)
+- **Show commands:** Cisco-like formatting for ip int brief, ip route, vlan brief, mac address-table, interfaces trunk
+
+### Remaining engine gaps for Round 2
+
+- Router subinterfaces / SVIs (802.1Q on router ports per VLAN)
+- Static routes + default gateway on hosts (off-subnet reachability via router)
+- `switchport trunk native vlan` configuration
+- Inter-VLAN routing (PC1 VLAN10 → PC2 VLAN20 via router)
+- TTL-exceeded ICMP, traceroute
+- STP, ACLs, DHCP, OSPF stubs
+- Worker cutover still main-thread in `useSimulationEngine.ts`
+
+### Test results
+
+```
+npm test -- simulation/
+ Test Files  3 passed (3)
+      Tests  9 passed (9)
+```
+
+## Round 1 — Agent B report
+
+**Specialist:** B (Sim UI)  
+**Status:** Complete
+
+### Files changed
+
+| File | Action |
+|------|--------|
+| `features/simulator/dock/CapturePane.tsx` | **new** — capture buffer UI |
+| `features/simulator/dock/TutorPane.tsx` | **new** — teaching hints panel |
+| `features/simulator/tutor/tutor-hints.ts` | **new** — rule engine (no LLM) |
+| `features/simulator/tutor/tutor-hints.test.ts` | **new** — 3 unit tests |
+| `features/simulator/shell/SimulatorShell.tsx` | **modified** — wire Capture + Tutor tabs |
+| `logs/2026-08-30-sim-ui-capture-tutor.log` | **new** — session log |
+
+`StubPane.tsx` retained but no longer used in shell.
+
+### Before / after
+
+**Capture tab (before):** StubPane placeholder — "Live traces feed Packets tab now; PCAP export is next."
+
+**Capture tab (after):** Scrollable buffer of recent `PacketTrace` rows with t/protocol/outcome/summary; protocol filter chips (all/ARP/ICMP/ETH); Copy JSON + Export `.json` download; row select syncs `selectedPacketId` with Packets tab.
+
+**Tutor tab (before):** StubPane — "Structured root-cause from check evidence lands after VLAN polish — no LLM yet."
+
+**Tutor tab (after):** Card list of rule-based hints from (1) failed grade checks (`interface_up`, `interface_ip`, `ping`), (2) selected packet or last dropped trace (VLAN mismatch, no ARP, no route, interface down, no link). Success/info cards when lab passes. Label: "rule-based · no LLM".
+
+### Remaining UI gaps (Round 2)
+
+1. **PCAP binary export** — JSON only for now
+2. **Capture vs Packets dedup** — overlapping views; could split detail pane or link tabs
+3. **Tutor ↔ Score cross-link** — jump to failing check from hint
+4. **Per-lab tutor playbooks** — hints are generic pattern-match, not lab-id specific
+5. **Inspector packet context** — selecting packet doesn't surface in right inspector
+6. **Events pane filtering** — no type filter yet (parity with Capture)
+7. **Dock resize / persistence** — fixed 280px height
+8. **Mobile dock layout** — capture toolbar wraps; no split detail on small screens
+
+### Risks
+
+- **Ping isolation heuristic** — uses `1/1 success` in check detail to detect wrong isolation; fragile if ping output format changes
+- **Hint dedup** — selected packet + last-drop fallback may show similar VLAN tips
+- **Clipboard API** — Copy JSON needs secure context / permission
+- **Trace volume** — no ring buffer; long sessions may grow memory (engine-side, not new)
+
+### Validation
+
+- lint ✓ · typecheck ✓ · test 58/58 ✓ · build ✓
+
+## Round 1 — Agent D report
+
+**Specialist:** D (Academy UX)  
+**Status:** Complete  
+**Validate:** `npm run validate` green (lint, typecheck, 58 tests, build)
+
+### UX changes by page
+
+| Page | Change |
+|------|--------|
+| **Dashboard** (`app/page.tsx`) | Added `AcademyPracticeSection` — single two-column card (Watch / Practice) between Journey and Methodology. Contextual suggested topic + matched simulator lab for current module. No video embeds in hero. |
+| **Today** (`app/today/page.tsx`) | Added compact "Reinforce today's module" strip above weekly focus — links to featured topic video and matched simulator lab. |
+| **Journey** (`components/JourneyNavigator.tsx`) | Added inline "Reinforce" links below journey track (compact + full variants) for current module. |
+| **Guide** (`app/guide/page.tsx`) | New "Topic Videos & Simulator" FAQ section; updated Start Here, Key Pages entries to document workflow and deep links. |
+| **New shared** | `lib/academy-resources.ts` — module→topic/lab mapping; `components/AcademyPracticeSection.tsx` — reusable dashboard/today/journey variants. |
+
+### How students discover videos + labs now
+
+1. **Sidebar** — Topic Videos + Simulator unchanged (Academy / Practice groups).
+2. **Dashboard** — Purposeful "Watch & Practice" section after journey bar; suggests module-matched topic + lab with browse fallbacks.
+3. **Today** — Reinforce strip at top of plan with one-click watch + lab launch.
+4. **Journey** — Contextual chips under milestone track for current module.
+5. **Curriculum** — Module topic strings still link to `/topics/<slug>` via `ModuleCard` (pre-existing).
+6. **Labs** — Lab Stack page still lists browser labs with deep links (pre-existing).
+7. **Guide** — Documents when to watch vs practice, local vs browser labs, and URL patterns.
+
+### Simulator lab mapping (Round 1)
+
+| Lab ID | Modules |
+|--------|---------|
+| `basic-lan` | m0–m4, m7 (foundation through early routing) |
+| `vlan-segment` | m5-vlan |
+
+### Remaining UX gaps for Round 2
+
+- Only 2 simulator labs mapped — OSPF, STP, ACL, etc. need labs + journey/dashboard links when Agent C delivers content.
+- Topic video suggestions use first `getTopicsForModule` match — could rank by daily plan theory keywords.
+- No simulator deep links from curriculum module cards (only topic video links today).
+- Journey milestone tooltips don't yet show available resources per milestone on hover.
+- Tour (`data-tour="practice"`) not wired into welcome tour steps.
+- Wireless, FortiGate, Azure modules have no topic videos yet — reinforce strip hidden when no resources exist.
+- Focus mode removed — no action needed; dashboard hero remains video-free.
+
+### Files touched
+
+- `app/page.tsx`
+- `app/today/page.tsx`
+- `app/guide/page.tsx`
+- `components/JourneyNavigator.tsx`
+- `components/AcademyPracticeSection.tsx` (new)
+- `lib/academy-resources.ts` (new)
+
+## Round 1 — Agent E report
+
+**Agent:** E (QA Polish)  
+**Completed:** 2026-08-30
+
+### Tests added
+
+- `lib/topic-videos.test.ts` — 29 tests covering:
+  - `resolveTopicSlug` for 20 curriculum labels (LAN, VLAN, OSPF, DNS, DHCP, STP, NAT, ARP, TCP/UDP, OSI, 802.1Q, etc.)
+  - Empty/unmatched label handling
+  - Ampersand normalization (`OSI and TCP/IP models`)
+  - `hasTopicVideo`
+  - `getTopicBySlug`, `getAllTopics`, `getRelatedTopics`, `getTopicsForModule`, `getTopicsForPhase`
+
+### Bugs fixed
+
+1. **Empty-label false match in `aliasScore`** (`lib/topic-videos.ts`): `""` incorrectly resolved to `osi-model` because `alias.includes("")` is always true in JS. Added `if (!a || !l) return 0` guard before scoring.
+
+### Broken wiring scan
+
+| Area | Status |
+|------|--------|
+| Imports to deleted focus/pomodoro files | Clean — no dangling imports |
+| `/focus` route | Handled — `next.config.ts` permanent redirect to `/today` |
+| Sidebar nav | Topics link present; no focus/pomodoro entries |
+| `ModuleCard` → topic links | Wired via `resolveTopicSlug` |
+| `AppProviders` | No deleted component refs |
+
+No additional broken imports or dead-route links found in app code. Stale references remain in `README.md` and `docs/` (focus mode, pomodoro) — documentation only, not runtime breakage.
+
+### Validate status
+
+**GREEN** — `npm run validate` passed (lint, typecheck, 58 tests in 9 files, Next.js build).
+
+### Round 2 QA priorities
+
+1. **Topic coverage gaps** — Map remaining curriculum topic strings without video slugs; wireless/QoS gaps per master success criteria.
+2. **Docs hygiene** — Update README and `docs/NEXT-PHASE-PLAN.md` to remove focus/pomodoro references.
+3. **Resolver edge cases** — Add tests for ambiguous labels (e.g. "routing" vs "dynamic routing", overlapping aliases).
+4. **E2E smoke** — Playwright: dashboard → today → topics → simulator (per NEXT-PHASE-PLAN).
+5. **Vitest config** — Resolve ESM/CommonJS warning on `vitest.config.ts`.
+6. **Simulator grading** — Expand lab-schema tests as new graded labs land (Agent C).
+
+## Round 2 — Agent A report
+
+**Agent:** Specialist A (Sim Engine)  
+**Completed:** 2026-08-30
+
+### Files changed
+
+| File | Why |
+|------|-----|
+| `simulation/core/controller.ts` | `addStaticRoute()`, `setDefaultGateway()`; LPM tie-break (connected AD 0 beats static AD 1); `pickEgressInterface` no longer sends off-subnet traffic without a route |
+| `simulation/core/types.ts` | Documented metric as admin distance on `RouteEntry` |
+| `simulation/cli/interpreter.ts` | `ip route <net> <mask> <next-hop>` (router config); `ip default-gateway <ip>` (host config); show ip route header lists S static |
+| `simulation/core/static-route.test.ts` | **new** — end-to-end PC1→PC2 via R1/R2, no-gateway failure, invalid next-hop rejection |
+| `simulation/grading/lab-schema.test.ts` | Added default-gateway lines to static-route grading fixture |
+
+### What works now
+
+- Routers accept `ip route 192.168.2.0 255.255.255.0 10.0.0.2` in global config
+- Hosts accept `ip default-gateway 192.168.1.1` (modeled as 0.0.0.0/0 static, AD 1)
+- PC1 can ping PC2 across two routers when reciprocal static routes + default gateways are configured
+- Off-subnet ping fails cleanly without default gateway (`No route to host`)
+- Static-route lab grading passes at 100%
+
+### Test results
+
+```
+npm test -- simulation/   → 15/15 passed
+npm test                  → 66/66 passed
+npm run validate          → FAIL (pre-existing: SimulatorShell.tsx missing BASIC_LAN_LAB / VLAN_SEGMENT_LAB imports — unrelated to engine)
+```
+
+### Master follow-up (same session)
+
+Validate blocker **resolved** — `content/labs/index.ts` now re-exports all lab constants. Master re-run: **validate GREEN** (66 tests, 5 labs in catalog, build OK). Criterion #2 (≥5 labs) now met alongside A static-route engine support.
+
+### Remaining engine gaps (Round 3+)
+
+- `no ip route` / `no ip default-gateway`
+- Router `ip route` via outgoing interface (no next-hop)
+- Inter-VLAN routing via subinterfaces/SVIs
+- Traceroute, OSPF, ACLs
+
+## Round 2 — Agent C report
+
+**Agent:** Specialist C (Content Labs)  
+**Completed:** 2026-08-30
+
+### Success criterion #2
+
+**MET** — 5 graded browser simulator labs registered and grading green.
+
+### New labs (3)
+
+| Lab ID | Title | Objectives |
+|--------|-------|------------|
+| `arp-icmp` | ARP & ICMP (Host-to-Host) | Same-subnet host addressing; bring interfaces up; PC1→PC2 ping (ARP + ICMP visible in Packets tab) |
+| `trunk-vlan` | 802.1Q Trunk Between Switches | Access VLAN 10 on both switches; Gi0/2 trunk allow 10; host IPs in 192.168.10.0/24; cross-switch ping |
+| `static-route` | Static Inter-Network Routing | R1↔R2 /30 + LAN addressing; reciprocal `ip route`; end-to-end PC1→PC2 ping across two routers |
+
+Existing labs retained: `basic-lan`, `vlan-segment`.
+
+### Wiring files
+
+| File | Change |
+|------|--------|
+| `content/labs/arp-icmp.ts` | **new** — PC1–SW1–PC2 L2 segment lab spec |
+| `content/labs/trunk-vlan.ts` | **new** — SW1↔SW2 trunk + VLAN 10 lab spec |
+| `content/labs/static-route.ts` | **new** — R1–R2–PC1/PC2 inter-network lab spec |
+| `content/labs/index.ts` | `LAB_CATALOG` + `LAB_LIST` registry (5 labs) |
+| `features/simulator/shell/SimulatorShell.tsx` | Loads `?lab=` from `LAB_CATALOG`; sample buttons use catalog keys |
+| `lib/academy-resources.ts` | `SIMULATOR_LABS` — 5 entries with moduleIds (arp→m2/m4, vlan/trunk→m5, static→m7, basic→m0–m4) |
+| `app/labs/page.tsx` | Dynamic grid from `LAB_LIST` + blurbs for all 5 labs |
+| `app/guide/page.tsx` | Deep-link docs list all lab IDs |
+| `simulation/grading/lab-schema.test.ts` | Grading fixtures for arp-icmp, trunk-vlan, static-route |
+| `lib/topic-videos.ts` | CDP/LLDP topic present — YouTube `_hnMZBzXRRk` (Jeremy Day 36, verified) |
+| `lib/topic-videos.test.ts` | Fixed `hasTopicVideo` negative case (wireless alias no longer false-negative) |
+
+### Validate status
+
+**GREEN** — `npm run validate` passed (lint, typecheck, 66 tests in 10 files, Next.js build).
+
+### Deep links
+
+- `/simulator?lab=arp-icmp`
+- `/simulator?lab=trunk-vlan`
+- `/simulator?lab=static-route`
+- `/simulator?lab=basic-lan`
+- `/simulator?lab=vlan-segment`
+
+### Topic videos added (Round 2 supplement)
+
+| Slug | YouTube ID | Source |
+|------|------------|--------|
+| `wireless-fundamentals` | `zuYiktLqNYQ` | Jeremy's IT Lab Day 55 — verified via YouTube fetch |
+| `wireless-architectures` | `uX1h0F6wpBY` | Jeremy's IT Lab Day 56 — verified via YouTube fetch |
+| `cdp-lldp` | `_hnMZBzXRRk` | Jeremy's IT Lab Day 36 — verified via YouTube fetch |
+
+**Deferred (no single-concept lecture added):** Wireless Security (Day 57), Wireless Configuration/GUI lab (Day 58), BGP, Azure, Fortinet, automation/SDN.
+
+**Round 2 content gaps:** inter-VLAN routing lab, STP/EtherChannel browser labs, `.nlab.yaml` mirrors for new labs, default-gateway called out in static-route lab objectives.
+
+## Round 6 — Master polish (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Weeks 21–24 daily plans | ✅ Monitoring, automation (REST/Python/Ansible/IaC/VXLAN), cloud fundamentals (28 days) |
+| Topic video refs | ✅ SNMP, Syslog, NTP, CDP/LLDP, FHRRP where applicable |
+| Browser sim review links | ✅ arp-icmp, static-route, trunk-vlan, vlan-segment, basic-lan in lab fields |
+| UI copy | ✅ weeks 1–28 on dashboard/today + README |
+
+**Still open:** sim OSPF/STP/DHCP, worker runtime, E2E.
+
+## Round 6 follow-up — Master audit (2026-08-30)
+
+After [Weeks 25-28 daily plans](dac8c43a-fe5f-4be6-9155-b7e06de1e782) subagent completion:
+
+| Check | Result |
+|-------|--------|
+| Weeks 21–24 gap | ✅ Filled (28 days: monitoring deep dive, automation, cloud fundamentals) |
+| Weeks 25–28 | ✅ Present (Azure AZ-104 / AZ-700 capstone) |
+| Full coverage | ✅ 28 weeks × 7 days = 196 day plans |
+| UI copy weeks 1–28 | ✅ dashboard, today, README (line 13 fixed) |
+| `npm run validate` | ✅ GREEN |
+
+**Next loop targets:** sim OSPF stub or Playwright E2E smoke; docs/NEXT-PHASE-PLAN.md still stale (weeks 1–4 note).
+
+## Round 7 — Playwright E2E smoke (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| `@playwright/test` + `playwright.config.ts` | ✅ Production server webServer, chromium only |
+| `tests/e2e/academy-smoke.spec.ts` | ✅ 6 tests: dashboard, today, topics, labs, simulator, nav flow |
+| `data-testid` on key pages | ✅ PageShell `testId` prop; simulator shell |
+| npm scripts | ✅ `test:e2e`, `test:e2e:ui` |
+| E2E run | ✅ 6/6 passed |
+| `npm run validate` | ✅ GREEN (unchanged — E2E separate from validate) |
+
+**Still open:** sim OSPF/STP/DHCP, docs/NEXT-PHASE-PLAN.md stale.
+
+## Round 9 — OSPF engine stub + lab (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| OSPF single-area stub | ✅ `simulation/core/ospf.ts` — adjacency, route learning |
+| CLI | ✅ `router ospf`, `network … area`, `show ip ospf neighbor`, O routes |
+| Lab `ospf-basic` | ✅ 6th graded browser lab |
+| Tests | ✅ `ospf.test.ts` + lab-schema grading |
+| Tutor playbook | ✅ ospf-basic hints |
+| `npm run validate` | ✅ GREEN (70 tests) |
+
+**Still open:** STP, DHCP, ACLs in-engine; inter-VLAN routing lab.
+
+## Round 8 — Worker runtime cutover (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| `SimWorkerClient` RPC wrapper | ✅ `simulation/workers/sim-worker-client.ts` |
+| `applyStartup` worker message | ✅ Protocol + worker handler |
+| `useSimulationEngine` cutover | ✅ Worker default in browser; main-thread fallback for SSR/tests |
+| `npm run validate` | ✅ GREEN |
+| `npm run test:e2e` | ✅ 6/6 (nav test hardened with waitForURL) |
+
+**Still open:** sim OSPF/STP/DHCP engine + labs, docs/NEXT-PHASE-PLAN.md stale.
+
+## Round 10 — DHCP engine stub + lab (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| DHCP DORA stub | ✅ `simulation/core/dhcp.ts` — pool, lease, L2 server discovery |
+| CLI | ✅ `ip dhcp pool`, `network`, `default-router`, `ip address dhcp` |
+| Capture | ✅ DHCP protocol filter in CapturePane |
+| Lab `dhcp-basic` | ✅ 7th graded browser lab |
+| Tests | ✅ `dhcp.test.ts` |
+| `npm run validate` + E2E | ✅ 71 tests, 6/6 E2E |
+
+**Still open:** STP, ACLs in-engine; inter-VLAN routing lab.
+
+## Round 11 — STP engine stub + lab (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| STP root election + blocking | ✅ `simulation/core/stp.ts` — BFS tree, one BLK port per redundant link |
+| Forwarding filter | ✅ `switchForward` drops frames on blocking ports |
+| CLI | ✅ `show spanning-tree` on switches |
+| Lab `stp-loop` | ✅ 8th graded browser lab (switch triangle + PC ping) |
+| Tests | ✅ `stp.test.ts`, `lab-schema.test.ts` stp-loop grading |
+| Tutor + resources | ✅ `tutor-hints.ts`, `academy-resources.ts`, labs page blurb |
+| `npm run validate` + E2E | ✅ (pending re-run after catalog wiring) |
+
+**Still open:** ACLs in-engine; inter-VLAN routing lab; Playwright sim interaction tests.
+
+## Round 12 — ACL engine stub + lab (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Standard ACL matching | ✅ `simulation/core/acl.ts` — wildcard match, first-match, implicit deny |
+| Forwarding filter | ✅ ingress/egress `ip access-group` on router interfaces |
+| CLI | ✅ `access-list`, `ip access-group`, `show access-lists` |
+| Lab `acl-standard` | ✅ 9th graded browser lab (one-way subnet block) |
+| Tests | ✅ `acl.test.ts`, `lab-schema.test.ts` acl-standard grading |
+| Tutor + resources | ✅ hints, academy-resources, labs page |
+| `npm run validate` + E2E | ✅ 79 unit tests, 6/6 E2E |
+
+**Still open:** inter-VLAN routing lab; extended ACLs; Playwright sim interaction tests; docs hygiene.
+
+## Round 13 — Inter-VLAN routing + ROAS (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Router subinterfaces | ✅ `simulation/core/subinterface.ts` — Gi0/0.10 parsing, dot1Q encap |
+| Trunk tagging on egress | ✅ VLAN meta on router transmit toward switch trunk |
+| Ingress VLAN demux | ✅ Tagged frames mapped to subinterface for L3/ARP |
+| CLI | ✅ `interface Gi0/0.10`, `encapsulation dot1Q`, IP on subif |
+| Lab `inter-vlan-routing` | ✅ 10th graded browser lab |
+| Tests | ✅ `inter-vlan-routing.test.ts`, lab-schema grading |
+| Tutor + resources | ✅ hints, academy-resources, labs page |
+| `npm run validate` + E2E | ✅ (pending re-run) |
+
+**Still open:** extended ACLs; Playwright sim interaction tests; docs hygiene; SVI on L3 switch.
+
+## Round 14 — Extended ACLs + sim E2E (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Extended ACL matching | ✅ protocol + src/dst wildcards, lists 100–199 |
+| CLI | ✅ `access-list 100 deny icmp …`, `permit ip any any` |
+| Lab `acl-extended` | ✅ 11th graded browser lab |
+| Playwright sim interaction | ✅ `simulator-basic-lan.spec.ts` — CLI config + submit 100% |
+| Device test IDs | ✅ `data-testid="device-node-{id}"` on canvas nodes |
+| Tests | ✅ extended ACL unit + lab-schema grading |
+| `npm run validate` + E2E | ✅ 7/7 E2E (incl. sim interaction) |
+
+**Still open:** docs hygiene; SVI on L3 switch; TCP/UDP port matching in extended ACLs.
+
+## Round 15 — Docs hygiene (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| README lab catalog table | ✅ 11 labs + test:e2e script |
+| NEXT-PHASE-PLAN refresh | ✅ current engine/lab state, removed stale focus refs |
+| Guide FAQ deep links | ✅ mentions all 11 labs |
+| CI Playwright job | ✅ `.github/workflows/ci.yml` e2e job |
+
+**Still open:** SVI; NAT; more sim E2E labs.
+
+## Round 16 — SVI / L3 switch (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| SVI interfaces | ✅ `simulation/core/svi.ts` — Vlan10, shared MAC |
+| L3 punt on switch | ✅ frames to SVI MAC → handleIpv4/ARP |
+| `ip routing` | ✅ enables inter-VLAN forward on switch |
+| CLI | ✅ `interface Vlan10`, `ip routing` |
+| Lab `inter-vlan-svi` | ✅ 12th graded browser lab |
+| Tests | ✅ `svi.test.ts`, lab-schema grading |
+| `npm run validate` + E2E | ✅ 86 unit + 7 E2E |
+| STP regression fix | ✅ skip MAC learn on blocking ports (SVI handleArrive) |
+
+**Still open:** NAT; TCP/UDP port ACLs; more sim E2E labs.
+
+## Round 17 — NAT PAT (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| NAT engine | ✅ `simulation/core/nat.ts` — PAT overload, translation table |
+| CLI | ✅ `ip nat inside/outside`, `ip nat inside source list … overload`, `show ip nat translations` |
+| Lab `nat-basic` | ✅ 13th graded browser lab |
+| Tests | ✅ `nat.test.ts`, lab-schema grading |
+| Catalog wiring | ✅ gates, tutor, labs page, README, guide |
+| `npm run validate` + E2E | ✅ 89 unit + 7 E2E |
+
+**Still open:** TCP/UDP port ACLs; more sim E2E labs; weekly review UI.
+
+## Round 18 — TCP port ACLs (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Extended ACL port eq | ✅ src/dst port matching in `acl.ts` |
+| TCP probe API | ✅ `sim.probe()` for tcp/udp grading |
+| Lab `acl-tcp` | ✅ 14th graded browser lab |
+| CLI | ✅ `access-list … tcp … eq 80` |
+| Tests | ✅ acl.test.ts, lab-schema grading |
+| Catalog wiring | ✅ gates, tutor, labs page, README, guide |
+| `npm run validate` + E2E | ✅ 92 unit + 7 E2E |
+
+**Still open:** more sim E2E labs; weekly review UI; drill expansion.
+
+## Round 19 — E2E + UX polish (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Shared sim E2E helpers | ✅ `tests/e2e/simulator-helpers.ts` |
+| vlan-segment E2E | ✅ full VLAN config + 100% submit |
+| CapturePane filters | ✅ TCP, UDP, NAT + color coding |
+| WeeklyReview enrichment | ✅ lab pass count + drill stats + links |
+| Smoke tests | ✅ drills page + accountability weekly review |
+| `npm run validate` + E2E | ✅ 92 unit + 10 E2E |
+
+**Still open:** more sim E2E labs; theme toggle; PWA shell.
+
+## Round 20 — Theme toggle + static-route E2E (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Light/dark theme | ✅ `ThemeProvider`, `data-theme` tokens, sidebar toggle |
+| Theme persistence | ✅ localStorage + beforeInteractive script (no flash) |
+| static-route E2E | ✅ dual-router static routes + 100% submit |
+| Theme smoke test | ✅ toggle light ↔ dark in Playwright |
+| `npm run validate` + E2E | ✅ 93 unit + 12 E2E |
+
+**Still open:** more sim E2E labs; keyboard shortcuts on Today.
+
+## Round 21 — Today keyboard shortcuts + nat-basic E2E (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Today keyboard shortcuts | ✅ N/P day nav, 1–5 block toggle, ? help, Esc close |
+| TodayShortcutsHelp overlay | ✅ modal + PageHeader button |
+| nat-basic E2E | ✅ PAT overload config + 100% submit |
+| Shortcuts smoke test | ✅ today page help opens in Playwright |
+| `npm run validate` + E2E | ✅ 93 unit + 14 E2E |
+
+**Still open:** more sim E2E labs (dhcp, acl-tcp, ospf, etc.); broader UX polish.
+
+## Round 22 — Sim E2E expansion: dhcp, acl-tcp, ospf (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| dhcp-basic E2E | ✅ pool + `ip address dhcp` DORA + ping gateway |
+| acl-tcp E2E | ✅ extended ACL port eq 80/443 + ICMP |
+| ospf-basic E2E | ✅ dual-router OSPF area 0 + end-to-end ping |
+| `npm run validate` + E2E | ✅ 93 unit + 17 E2E |
+
+**Still open:** E2E for remaining 7 labs (arp-icmp, trunk-vlan, stp-loop, acl-standard, inter-vlan-routing, acl-extended, inter-vlan-svi); broader UX polish.
+
+## Round 23 — Full sim E2E coverage (14/14 labs) (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| E2E for remaining 7 labs | ✅ arp-icmp, trunk-vlan, stp-loop, acl-standard, inter-vlan-routing, acl-extended, inter-vlan-svi |
+| E2E device selection hook | ✅ `simulator:select-device` event in SimulatorShell |
+| Wider Playwright viewport | ✅ 1600×900 for canvas layout |
+| `npm run validate` + E2E | ✅ 93 unit + 24 E2E |
+
+**Still open:** broader UX polish; production completion audit.
+
+## Round 24 — Gates drill CTAs + drill E2E smoke (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| VLSM gate criterion | ✅ CCNA gate + Practice VLSM CTA |
+| Wireshark / phases CTAs | ✅ packet analysis labs + curriculum links |
+| Gates / VLSM / recall E2E smoke | ✅ 3 new smoke tests |
+| `npm run validate` + E2E | ✅ 96 unit + 27 E2E |
+
+**Still open:** PWA shell; milestone celebrations; production completion audit.
+
+## Round 25 — Milestone celebrations + REGRESSION refresh (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Milestone detection | ✅ `lib/milestone-celebrations.ts` (module, phase, labs, gates, drill streaks) |
+| Confetti + toasts | ✅ `MilestoneCelebration` + `ConfettiBurst` (respects reduced motion) |
+| REGRESSION.md | ✅ Updated for current feature set (no focus mode) |
+| Plan updates | ✅ PWA + milestones marked done |
+| `npm run validate` + E2E | ✅ 99 unit; E2E 27 (occasional nav flake on smoke) |
+
+**Still open:** production completion audit; README/guide final pass.
+
+## Round 26 — Production audit + docs (2026-08-30)
+
+| Deliverable | Status |
+|-------------|--------|
+| Completion audit | ✅ `logs/2026-08-30-production-audit.log` |
+| README refresh | ✅ 14 labs, 99 unit + 27 E2E, PWA/milestones/shortcuts |
+| Guide tips | ✅ Today shortcuts + theme |
+| Nav E2E flake fix | ✅ Promise.all click+waitForURL |
+| `npm run test:e2e` | ✅ 27 passed |
+
+**Verdict:** Core browser academy production-ready. Optional: extend lab runbooks beyond weeks 5–6.

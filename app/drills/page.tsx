@@ -48,7 +48,7 @@ export default function DrillsPage() {
       : 0;
 
   return (
-    <PageShell>
+    <PageShell testId="drills-page">
       <PageHeader
         eyebrow="Practice Lab"
         title="Drills"

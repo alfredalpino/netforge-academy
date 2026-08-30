@@ -92,7 +92,7 @@ export default function VlsmDrillPage() {
   if (!loaded) return <PageSkeleton />;
 
   return (
-    <PageShell narrow>
+    <PageShell narrow testId="vlsm-drill-page">
       <PageHeader
         eyebrow="Drills"
         title="VLSM Design"

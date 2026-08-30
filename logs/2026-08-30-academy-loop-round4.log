@@ -1,0 +1,25 @@
+# Round 4 — Simulator Progress + Weeks 8–12 Plans — 2026-08-30
+
+## Simulator ↔ Progress
+
+- Added `completedSimulatorLabs: string[]` to ProgressState + schema (backward compatible)
+- `recordSimulatorLabPass(labId)` on passing lab submit in SimulatorShell
+- Toast: "Lab passed · X% — saved to progress"
+- Labs page: Passed badge + X/5 passed counter
+
+## Curriculum content
+
+- Weeks 8–12 daily plans (35 days):
+  - Week 8: Routing fundamentals
+  - Week 9–10: OSPF
+  - Week 11: Advanced routing + Phase 3 gate
+  - Week 12: DNS, DHCP, NTP, SNMP, Syslog, SSH
+
+## Tests
+
+- progress-schema.test.ts: completedSimulatorLabs migration
+- validate GREEN (68 tests)
+
+## Goal status
+
+Active — weeks 13–28, sim OSPF/STP/DHCP, worker runtime, E2E remain.

@@ -130,7 +130,7 @@ export default function AccountabilityPage() {
   const backupDays = daysSinceBackup(progress.lastBackupDate);
 
   return (
-    <PageShell>
+    <PageShell testId="accountability-page">
       <PageHeader
         eyebrow="Accountability"
         title="Streak & Progress Tracker"

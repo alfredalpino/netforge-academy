@@ -1,0 +1,17 @@
+# Sim UI — Capture + Tutor panes (Agent B, Round 1)
+
+**Date:** 2026-08-30  
+**Agent:** Specialist B (Sim UI)
+
+## Actions
+
+- Added `CapturePane.tsx` — protocol filter, packet list with outcome column, Copy JSON + Export
+- Added `TutorPane.tsx` + `tutor/tutor-hints.ts` — rule-based hints from grade failures and packet traces
+- Wired both tabs in `SimulatorShell.tsx` (removed StubPane usage for capture/tutor)
+- Added `tutor-hints.test.ts` (3 cases)
+
+## Validation
+
+- `npm run lint` — pass
+- `npm run typecheck` — pass
+- `npm run test` — 58/58 pass

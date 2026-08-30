@@ -20,6 +20,15 @@ export const labCheckSchema = z.discriminatedUnion("type", [
     to: z.string(),
     expect: z.enum(["success", "fail"]).default("success"),
   }),
+  z.object({
+    type: z.literal("probe"),
+    from: z.string(),
+    to: z.string(),
+    protocol: z.enum(["tcp", "udp"]),
+    dstPort: z.number().int().min(1).max(65535),
+    srcPort: z.number().int().min(1).max(65535).optional(),
+    expect: z.enum(["success", "fail"]).default("success"),
+  }),
 ]);
 
 export const labSpecSchema = z.object({
@@ -139,15 +148,31 @@ export function gradeLab(lab: LabSpec, sim: SimulationController): GradeReport {
       };
     }
     // ping
-    const ping = sim.ping(check.from, check.to, 1);
+    if (check.type === "ping") {
+      const ping = sim.ping(check.from, check.to, 1);
+      const expectSuccess = check.expect === "success";
+      const pass = expectSuccess ? ping.success : !ping.success;
+      return {
+        id,
+        type: check.type,
+        label: `Ping ${check.from} → ${check.to}`,
+        pass,
+        detail: ping.output,
+      };
+    }
+    const probe = sim.probe(check.from, check.to, {
+      protocol: check.protocol,
+      dstPort: check.dstPort,
+      srcPort: check.srcPort,
+    });
     const expectSuccess = check.expect === "success";
-    const pass = expectSuccess ? ping.success : !ping.success;
+    const pass = expectSuccess ? probe.success : !probe.success;
     return {
       id,
       type: check.type,
-      label: `Ping ${check.from} → ${check.to}`,
+      label: `${check.protocol.toUpperCase()} probe ${check.from} → ${check.to}:${check.dstPort}`,
       pass,
-      detail: ping.output,
+      detail: probe.output,
     };
   });
 

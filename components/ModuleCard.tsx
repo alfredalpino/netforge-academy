@@ -1,7 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import type { Module } from "@/lib/types";
 import { useProgress } from "@/lib/progress";
+import { resolveTopicSlug } from "@/lib/topic-videos";
+import {
+  getSimulatorLabForModule,
+  getSimulatorLabHref,
+} from "@/lib/academy-resources";
 import { useToast } from "@/components/ui/Toast";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +21,7 @@ export function ModuleCard({ module, index }: ModuleCardProps) {
   const { isModuleComplete, completeModule, loaded } = useProgress();
   const { showToast } = useToast();
   const complete = loaded && isModuleComplete(module.id);
+  const simLab = getSimulatorLabForModule(module.id);
 
   const handleToggle = () => {
     completeModule(module.id);
@@ -54,13 +61,39 @@ export function ModuleCard({ module, index }: ModuleCardProps) {
       <div className="mt-5">
         <h3 className="text-xs uppercase tracking-widest text-muted">Topics</h3>
         <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
-          {module.topics.map((t) => (
-            <li key={t} className="text-sm text-foreground/90">
-              · {t}
-            </li>
-          ))}
+          {module.topics.map((t) => {
+            const slug = resolveTopicSlug(t);
+            return (
+              <li key={t} className="text-sm text-foreground/90">
+                ·{" "}
+                {slug ? (
+                  <Link
+                    href={`/topics/${slug}`}
+                    className="text-accent hover:underline"
+                    title={`Watch: ${t}`}
+                  >
+                    {t}
+                  </Link>
+                ) : (
+                  t
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
+
+      {simLab && (
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <Link
+            href={getSimulatorLabHref(simLab.id)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-accent transition hover:border-accent/40 hover:bg-surface-hover"
+          >
+            Practice in simulator
+            <span className="text-muted">· {simLab.title}</span>
+          </Link>
+        </div>
+      )}
 
       {module.commands && (
         <div className="mt-5">

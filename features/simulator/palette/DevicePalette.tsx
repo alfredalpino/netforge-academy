@@ -6,8 +6,14 @@ export type PaletteDevice = {
   hint: string;
 };
 
+const ICON: Record<PaletteDevice["type"], string> = {
+  router: "/simulator/icons/router.svg",
+  switch: "/simulator/icons/switch.svg",
+  host: "/simulator/icons/host.svg",
+};
+
 const DEVICES: PaletteDevice[] = [
-  { type: "router", label: "Router", hint: "L3 forwarding · NetForgeOS" },
+  { type: "router", label: "Router", hint: "L3 · NetForgeOS" },
   { type: "switch", label: "Switch", hint: "L2 MAC learning" },
   { type: "host", label: "Host", hint: "End station · ping" },
 ];
@@ -40,16 +46,27 @@ export function DevicePalette({ onAddDevice, collapsed = false }: DevicePaletteP
             <button
               type="button"
               onClick={() => onAddDevice?.(device.type)}
-              className="flex w-full flex-col items-start rounded-lg border border-transparent px-2.5 py-2 text-left transition hover:border-border hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2 py-2 text-left transition hover:border-border hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <span className="text-sm font-medium text-foreground">{device.label}</span>
-              <span className="text-[0.7rem] text-muted">{device.hint}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ICON[device.type]}
+                alt=""
+                width={28}
+                height={28}
+                className="shrink-0 rounded"
+                draggable={false}
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-foreground">{device.label}</span>
+                <span className="block text-[0.65rem] text-muted">{device.hint}</span>
+              </span>
             </button>
           </li>
         ))}
       </ul>
       <p className="border-t border-border px-3 py-2 text-[0.65rem] leading-relaxed text-muted">
-        Click to place on canvas. Links connect matching interfaces.
+        Click to place on canvas. Drag between handles to link.
       </p>
     </aside>
   );

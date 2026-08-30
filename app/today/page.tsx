@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useState } from "react";
 import { useProgress, getDayProgressPercent } from "@/lib/progress";
 import { getDayPlan, getWeekPlans, dayKey } from "@/lib/daily-plans";
 import { DAILY_BLOCKS, WEEKLY_RHYTHM, getWeekPhase, getDayOfWeek } from "@/lib/schedule";
@@ -14,11 +15,15 @@ import { PageShell } from "@/components/ui/PageShell";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { AcademyPracticeSection } from "@/components/AcademyPracticeSection";
+import { TodayShortcutsHelp } from "@/components/TodayShortcutsHelp";
+import { useTodayKeyboard } from "@/hooks/useTodayKeyboard";
 
 export default function TodayPage() {
   const {
     progress,
     completeDay,
+    completeBlock,
     setCurrentPosition,
     isDayComplete,
     isBlockComplete,
@@ -26,6 +31,50 @@ export default function TodayPage() {
   } = useProgress();
   const { confirm } = useConfirm();
   const { showToast } = useToast();
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const goPrevDay = useCallback(() => {
+    setCurrentPosition(
+      progress.currentDay === 1 ? Math.max(1, progress.currentWeek - 1) : progress.currentWeek,
+      progress.currentDay === 1 ? 7 : progress.currentDay - 1,
+    );
+  }, [progress.currentDay, progress.currentWeek, setCurrentPosition]);
+
+  const goNextDay = useCallback(() => {
+    setCurrentPosition(
+      progress.currentDay === 7 ? progress.currentWeek + 1 : progress.currentWeek,
+      progress.currentDay === 7 ? 1 : progress.currentDay + 1,
+    );
+  }, [progress.currentDay, progress.currentWeek, setCurrentPosition]);
+
+  const markBlockByIndex = useCallback(
+    (index: number) => {
+      const block = DAILY_BLOCKS[index];
+      if (!block) return;
+      if (isBlockComplete(progress.currentWeek, progress.currentDay, block.id)) {
+        showToast(`${block.title} already complete`, "warning");
+        return;
+      }
+      completeBlock(progress.currentWeek, progress.currentDay, block.id);
+      showToast(`${block.title} marked complete`);
+    },
+    [
+      completeBlock,
+      isBlockComplete,
+      progress.currentDay,
+      progress.currentWeek,
+      showToast,
+    ],
+  );
+
+  useTodayKeyboard({
+    helpOpen,
+    onShowHelp: () => setHelpOpen(true),
+    onHideHelp: () => setHelpOpen(false),
+    onPrevDay: goPrevDay,
+    onNextDay: goNextDay,
+    onCompleteBlock: markBlockByIndex,
+  });
 
   const plan = getDayPlan(progress.currentWeek, progress.currentDay);
   const weekPlans = getWeekPlans(progress.currentWeek);
@@ -59,26 +108,30 @@ export default function TodayPage() {
   if (!loaded) return <PageSkeleton />;
 
   return (
-    <PageShell>
+    <PageShell testId="today-page">
+      <TodayShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
       <PageHeader
         eyebrow="Daily Plan"
         title={`Week ${progress.currentWeek} · Day ${progress.currentDay} — ${dayName}`}
         description={phase}
+        actions={
+          <button
+            type="button"
+            data-testid="today-shortcuts-trigger"
+            onClick={() => setHelpOpen(true)}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            aria-label="Keyboard shortcuts"
+          >
+            ? Shortcuts
+          </button>
+        }
       />
       <div className="mb-8 max-w-md">
         <ProgressBar value={dayProgress} label="Today's block progress" />
       </div>
 
       <div className="mb-8 flex flex-wrap items-center gap-2" data-tour="today-nav">
-        <Button
-          variant="secondary"
-          onClick={() =>
-            setCurrentPosition(
-              progress.currentDay === 1 ? Math.max(1, progress.currentWeek - 1) : progress.currentWeek,
-              progress.currentDay === 1 ? 7 : progress.currentDay - 1
-            )
-          }
-        >
+        <Button variant="secondary" onClick={goPrevDay}>
           ← Prev
         </Button>
         {weekPlans.map((d) => (
@@ -96,18 +149,12 @@ export default function TodayPage() {
             D{d.day}
           </button>
         ))}
-        <Button
-          variant="secondary"
-          onClick={() =>
-            setCurrentPosition(
-              progress.currentDay === 7 ? progress.currentWeek + 1 : progress.currentWeek,
-              progress.currentDay === 7 ? 1 : progress.currentDay + 1
-            )
-          }
-        >
+        <Button variant="secondary" onClick={goNextDay}>
           Next →
         </Button>
       </div>
+
+      <AcademyPracticeSection variant="today" />
 
       {weeklyFocus && (
         <Card className="mb-6 py-4">
@@ -163,23 +210,20 @@ export default function TodayPage() {
             )}
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/focus">
-              <Button>Open in Focus Mode</Button>
-            </Link>
-            {!isDayComplete(progress.currentWeek, progress.currentDay) && (
+          {!isDayComplete(progress.currentWeek, progress.currentDay) && (
+            <div className="mt-8">
               <Button variant="success" onClick={handleMarkDayComplete}>
                 Mark Day Complete
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </>
       ) : (
         <Card className="mb-8 border-warning/30 bg-warning/5">
           <h2 className="text-lg font-medium text-warning">Module study mode</h2>
           <p className="mt-2 text-sm text-muted">
-            Detailed day-by-day plans are available for weeks 1–6. For week {progress.currentWeek},
-            study from the current curriculum module and use Focus Mode for your daily blocks.
+            Detailed day-by-day plans are available for weeks 1–28. For week {progress.currentWeek},
+            study from the current curriculum module and follow the daily block template below.
           </p>
           {moduleInfo && (
             <Link
@@ -189,11 +233,6 @@ export default function TodayPage() {
               Open {moduleInfo.module.title} in curriculum →
             </Link>
           )}
-          <div className="mt-6">
-            <Link href="/focus">
-              <Button>Open in Focus Mode</Button>
-            </Link>
-          </div>
         </Card>
       )}
 

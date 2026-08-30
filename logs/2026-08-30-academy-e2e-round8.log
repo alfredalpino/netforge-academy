@@ -1,0 +1,15 @@
+# Academy E2E Round 8 — dhcp, acl-tcp, ospf (2026-08-30)
+
+## Added specs
+- tests/e2e/simulator-dhcp-basic.spec.ts
+- tests/e2e/simulator-acl-tcp.spec.ts
+- tests/e2e/simulator-ospf-basic.spec.ts
+
+## Results
+- npm run validate: pass
+- npm run test:e2e: 17 passed
+
+## Notes
+- dhcp E2E waits 2s after `ip address dhcp` for DORA
+- ospf E2E waits 3s for FULL adjacency before submit
+- Check IDs are 0-indexed (c0..cN); fixed off-by-one on ping/probe assertions

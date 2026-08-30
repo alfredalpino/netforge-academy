@@ -1,0 +1,37 @@
+# Topic Video Embeds — 2026-08-30
+
+## Summary
+
+Added curated single-concept YouTube explanation videos across the academy curriculum.
+
+## Research sources
+
+- **Primary:** Jeremy's IT Lab CCNA 200-301 Complete Course (2025 playlist `PLxbwE86jKRgMpuZuLBivzlM8s2Dk5lXBQ`)
+- **Supplement:** NetworkChuck — subnet mask intuition (`oZGZRtaGyG8`)
+
+Selection criteria: lecture videos only (not labs), one concept per page, CCNA-aligned depth.
+
+## Files created
+
+- `lib/topic-videos.ts` — 48 topic entries with YouTube IDs, aliases, module/phase mapping
+- `components/YouTubeEmbed.tsx` — responsive 16:9 lazy-loaded embed (youtube-nocookie.com)
+- `app/topics/page.tsx` — topic index grouped by phase
+- `app/topics/[slug]/page.tsx` — individual topic pages with embed + related links
+
+## Files updated
+
+- `components/ModuleCard.tsx` — curriculum topic strings link to `/topics/[slug]` when matched
+- `components/Sidebar.tsx` — "Topic Videos" nav item
+- `app/curriculum/[phaseId]/page.tsx` — link to topic index
+
+## Video attribution
+
+Embedded content © respective YouTube creators. Jeremy's IT Lab CCNA lectures used under standard YouTube embed terms for educational purposes.
+
+## Topics covered (48)
+
+OSI, TCP/IP, encapsulation, network devices, cables, LAN, Ethernet switching, MAC, IPv4, subnetting, VLSM, routing, static routing, OSPF (3 parts), ARP/packet life, TCP/UDP, VLANs (3 parts), STP/RSTP, EtherChannel, IPv6 (3 parts), ACLs, DNS, DHCP, NTP, SNMP, Syslog, SSH, NAT/PAT, QoS, security fundamentals, port security, FHRRP.
+
+## Not yet covered (no single high-quality lecture mapped)
+
+Wireless/802.11, BGP, Azure, Fortinet, automation/SDN — to be added when curated sources are selected.

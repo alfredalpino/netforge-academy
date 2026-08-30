@@ -1,0 +1,16 @@
+# Agent C — Content Labs Round 1 — 2026-08-30
+
+## Actions
+
+1. Added 3 graded browser labs: arp-icmp, trunk-vlan, static-route (catalog now 5 labs).
+2. Created content/labs/index.ts as single LAB_CATALOG registry.
+3. Wired SimulatorShell + app/labs/page.tsx for deep links /simulator?lab=<id>.
+4. Re-exported SIMULATOR_LABS from lib/lab-runbooks.ts.
+5. Added 3 verified topic videos: wireless-fundamentals, wireless-architectures, cdp-lldp.
+6. Added Vitest grading coverage for all new labs.
+
+## Verification
+
+npm run validate — pass (66 tests, lint, typecheck, build).
+
+Report appended to logs/2026-08-30-academy-loop-master.log.

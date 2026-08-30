@@ -1,0 +1,22 @@
+# Round 7 — Playwright E2E smoke tests
+
+**Date:** 2026-08-30  
+**Agent:** Master (direct)
+
+## Actions
+
+1. Installed `@playwright/test` and Chromium browser for Playwright.
+2. Added `playwright.config.ts` — builds production app, starts `next start`, chromium project.
+3. Added `tests/e2e/academy-smoke.spec.ts` — 6 smoke tests covering dashboard → today → topics → labs → simulator navigation.
+4. Extended `PageShell` with optional `testId` prop; tagged dashboard, today, topics, labs, simulator shell.
+5. Added `test:e2e` and `test:e2e:ui` npm scripts; updated `.gitignore` for Playwright artifacts.
+
+## Verification
+
+- `npm run test:e2e` — **6/6 passed**
+- `npm run validate` — **GREEN** (68 unit tests + lint + typecheck + build)
+
+## Notes
+
+- E2E is intentionally separate from `validate` (slower; requires browser install).
+- Locators scoped to `#main-content` to avoid strict-mode duplicate matches during SSR/hydration.

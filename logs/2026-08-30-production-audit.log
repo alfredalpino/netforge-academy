@@ -1,0 +1,33 @@
+# Production Completion Audit — 2026-08-30
+
+## Objective
+Complete, production-ready Network Academy: simulator + packet resources + curriculum + drills + polished UX.
+
+## Requirement audit
+
+| Requirement | Evidence | Status |
+|-------------|----------|--------|
+| Working networking simulator | 14 labs in `content/labs/`, engine in `simulation/core/`, 14 E2E specs | ✅ |
+| Rich packet resources | CapturePane, PacketsPane, EventsPane, DHCP/NAT/TCP filters | ✅ |
+| Curriculum content | `lib/daily-plans.ts` weeks 1–28, 51 topic videos, curriculum phases | ✅ |
+| Drills | `/drills` subnet + VLSM + recall pages, gate CTAs | ✅ |
+| Polished UX | Theme, Today shortcuts, weekly review, milestones, PWA, gates | ✅ |
+| Unit tests | `npm run validate` — 99 tests | ✅ |
+| E2E tests | 27 Playwright specs (smoke + 14 sim labs) | ✅ |
+| CI | `.github/workflows/ci.yml` validate + e2e jobs | ✅ |
+| Onboarding docs | README, `/guide`, REGRESSION.md updated | ✅ |
+| Progress safety | Export/import preview, backup reminder, PWA IDB | ✅ |
+
+## Known partial scope (not blocking core academy)
+
+| Item | State |
+|------|--------|
+| Lab runbooks | Weeks 5–6 only (`lib/lab-runbooks.ts`) — extend as needed |
+| Vercel deploy | User-managed; CI validates build |
+| Multi-device sync | Out of scope (localStorage + export) |
+
+## Verdict
+
+**Core academy objective achieved** for browser-deliverable scope: simulator, curriculum loop, drills, gates, accountability, and production test coverage.
+
+Remaining expansion: more lab runbook weeks, optional Supabase sync (Phase 5).

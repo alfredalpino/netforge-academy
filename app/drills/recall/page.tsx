@@ -39,7 +39,7 @@ export default function RecallDrillPage() {
   };
 
   return (
-    <PageShell narrow>
+    <PageShell narrow testId="recall-drill-page">
       <PageHeader
         eyebrow="Drills"
         title="Recall Flashcards"
